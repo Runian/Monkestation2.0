@@ -70,8 +70,8 @@
 	name = "cyborg reclassification board"
 	desc = "Used to rename a cyborg."
 	icon_state = "cyborg_upgrade1"
-	var/heldname = ""
 	one_use = TRUE
+	var/heldname = ""
 
 /obj/item/borg/upgrade/rename/attack_self(mob/user)
 	var/new_heldname = sanitize_name(tgui_input_text(user, "Enter new robot name", "Cyborg Reclassification", heldname, MAX_NAME_LEN), allow_numbers = TRUE)
@@ -325,7 +325,7 @@
 /obj/item/borg/upgrade/transform/clown
 	name = "borg model picker (Clown)"
 	desc = "Allows you to to turn a cyborg into a clown, honk."
-	icon_state = "module_clown"
+	icon_state = "module_honk"
 	new_model = /obj/item/robot_model/clown
 
 /obj/item/borg/upgrade/transform/centcom
@@ -371,7 +371,7 @@
 	name = "peacekeeper cyborg nanite remote"
 	desc = "An upgrade to the Peacekeeper model, installing a nanite remote. \
 			Allowing the cyborg to signal nanites in crew."
-	icon_state = "module_peacekeeper"
+	icon_state = "module_peace"
 	require_model = TRUE
 	model_type = list(/obj/item/robot_model/peacekeeper, /obj/item/robot_model/security)
 	model_flags = BORG_MODEL_PEACEKEEPER
@@ -685,9 +685,8 @@
 /obj/item/borg_restart_board
 	name = "cyborg emergency reboot module"
 	desc = "A reusable firmware reset tool that can force a reboot of a disabled-but-repaired cyborg, bringing it back online."
-	w_class = WEIGHT_CLASS_SMALL
-	icon = 'icons/obj/module.dmi'
 	icon_state = "cyborg_upgrade1"
+	w_class = WEIGHT_CLASS_SMALL
 
 /obj/item/borg_restart_board/pre_attack(mob/living/silicon/robot/borg, mob/living/user, params)
 	if(!istype(borg))
