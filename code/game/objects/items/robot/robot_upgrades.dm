@@ -259,7 +259,7 @@
 	. = ..()
 	if(!.)
 		return .
-	if(borg.key) //You cannot replace a player unless the key is completely removed.
+	if(borg.key) // You cannot replace a player unless the key is completely removed.
 		to_chat(user, span_warning("Intelligence patterns detected in this [borg.braintype]. Aborting."))
 		return FALSE
 	borg.make_shell(src)
