@@ -244,14 +244,18 @@
 	desc = "This module will repair the cyborg over time."
 	icon_state = "module_general"
 	require_model = TRUE
-	var/repair_amount = -1
-	/// world.time of next repair
-	var/next_repair = 0
-	/// Minimum time between repairs in seconds
-	var/repair_cooldown = 4
-	var/on = FALSE
+	/// The amount of burn and brute damage to be healed.
+	var/repair_amount = 1
+	/// The amount of deciseconds between repairs.
+	var/repair_cooldown = 0.4 SECONDS
+	/// The energy cost of the repair.
 	var/energy_cost = 0.01 * STANDARD_CELL_CHARGE
+	/// Is self-repair active?
+	var/on = FALSE
+	/// The action used to toggle self-repair.
 	var/datum/action/toggle_action
+	/// The cooldown between repairs.
+	COOLDOWN_DECLARE(next_repair)
 
 /obj/item/borg/upgrade/selfrepair/action(mob/living/silicon/robot/borg, mob/living/user = usr)
 	. = ..()
@@ -295,47 +299,45 @@
 	update_appearance()
 
 /obj/item/borg/upgrade/selfrepair/process()
-	if(world.time < next_repair)
+	if(!COOLDOWN_FINISHED(src, next_repair))
 		return
-
-	var/mob/living/silicon/robot/cyborg = toggle_action.owner
-
-	if(istype(cyborg) && (cyborg.stat != DEAD) && on)
-		if(!cyborg.cell)
-			to_chat(cyborg, span_alert("Self-repair module deactivated. Please insert power cell."))
-			deactivate_sr()
-			return
-
-		if(cyborg.cell.charge < energy_cost * 2)
-			to_chat(cyborg, span_alert("Self-repair module deactivated. Please recharge."))
-			deactivate_sr()
-			return
-
-		if(cyborg.health < cyborg.maxHealth)
-			if(cyborg.health < 0)
-				repair_amount = -2.5
-				energy_cost = 0.03 * STANDARD_CELL_CHARGE
-			else
-				repair_amount = -1
-				energy_cost = 0.01 * STANDARD_CELL_CHARGE
-			cyborg.adjustBruteLoss(repair_amount)
-			cyborg.adjustFireLoss(repair_amount)
-			cyborg.updatehealth()
-			cyborg.cell.use(energy_cost)
-		else
-			cyborg.cell.use(0.005 * STANDARD_CELL_CHARGE)
-		next_repair = world.time + repair_cooldown * 10 // Multiply by 10 since world.time is in deciseconds
-
-		if(TIMER_COOLDOWN_FINISHED(src, COOLDOWN_BORG_SELF_REPAIR))
-			TIMER_COOLDOWN_START(src, COOLDOWN_BORG_SELF_REPAIR, 200 SECONDS)
-			var/msgmode = "standby"
-			if(cyborg.health < 0)
-				msgmode = "critical"
-			else if(cyborg.health < cyborg.maxHealth)
-				msgmode = "normal"
-			to_chat(cyborg, span_notice("Self-repair is active in [span_boldnotice("[msgmode]")] mode."))
-	else
+	if(!iscyborg(toggle_action.owner))
+		return
+	var/mob/living/silicon/robot/borg = toggle_action.owner
+	if(!istype(borg) || borg.stat == DEAD || !on)
 		deactivate_sr()
+		return
+	if(!borg.cell)
+		to_chat(borg, span_alert("Self-repair module deactivated. Please insert power cell."))
+		deactivate_sr()
+		return
+	if(borg.cell.charge < energy_cost * 2)
+		to_chat(borg, span_alert("Self-repair module deactivated. Please recharge."))
+		deactivate_sr()
+		return
+	if(borg.health < borg.maxHealth)
+		if(borg.health < 0)
+			repair_amount = 2.5
+			energy_cost = 0.03 * STANDARD_CELL_CHARGE
+		else
+			repair_amount = 1
+			energy_cost = 0.01 * STANDARD_CELL_CHARGE
+		borg.adjustBruteLoss(-repair_amount)
+		borg.adjustFireLoss(-repair_amount)
+		borg.updatehealth()
+		borg.cell.use(energy_cost)
+	else
+		borg.cell.use(0.005 * STANDARD_CELL_CHARGE)
+	COOLDOWN_START(src, next_repair, repair_cooldown SECONDS)
+	if(!TIMER_COOLDOWN_FINISHED(src, COOLDOWN_BORG_SELF_REPAIR))
+		return
+	TIMER_COOLDOWN_START(src, COOLDOWN_BORG_SELF_REPAIR, 200 SECONDS)
+	var/msgmode = "standby"
+	if(borg.health < 0)
+		msgmode = "critical"
+	else if(borg.health < borg.maxHealth)
+		msgmode = "normal"
+	to_chat(borg, span_notice("Self-repair is active in [span_boldnotice("[msgmode]")] mode."))
 
 /obj/item/borg/upgrade/hypospray
 	name = "medical cyborg hypospray advanced synthesiser"
@@ -617,17 +619,17 @@
 	desc = "As if existence as an artificial being wasn't torment enough for the unit OR the crew."
 	icon_state = "module_general"
 
-/obj/item/borg/upgrade/uwu/action(mob/living/silicon/robot/robutt, user = usr)
+/obj/item/borg/upgrade/uwu/action(mob/living/silicon/robot/borg, user = usr)
 	. = ..()
 	if(!.)
 		return .
-	robutt.AddComponentFrom(REF(src), /datum/component/fluffy_tongue)
+	borg.AddComponentFrom(REF(src), /datum/component/fluffy_tongue)
 
-/obj/item/borg/upgrade/uwu/deactivate(mob/living/silicon/robot/robutt, user = usr)
+/obj/item/borg/upgrade/uwu/deactivate(mob/living/silicon/robot/borg, user = usr)
 	. = ..()
 	if(!.)
 		return .
-	robutt.RemoveComponentSource(REF(src), /datum/component/fluffy_tongue)
+	borg.RemoveComponentSource(REF(src), /datum/component/fluffy_tongue)
 
 /obj/item/borg/upgrade/surgery
 	name = "medical surgical toolset upgrade"
@@ -656,10 +658,10 @@
 	icon_state = "module_general"
 	var/obj/item/robot_model/new_model = null
 
-/obj/item/borg/upgrade/transform/action(mob/living/silicon/robot/R, user = usr)
+/obj/item/borg/upgrade/transform/action(mob/living/silicon/robot/borg, user = usr)
 	. = ..()
 	if(. && new_model)
-		R.model.transform_to(new_model, FALSE)
+		borg.model.transform_to(new_model, FALSE)
 
 /obj/item/borg/upgrade/transform/clown
 	name = "borg model picker (Clown)"
