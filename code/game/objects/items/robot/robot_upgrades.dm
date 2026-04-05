@@ -7,6 +7,7 @@
 	icon = 'icons/mob/silicon/robot_items.dmi'
 	icon_state = "module_general"
 	w_class = WEIGHT_CLASS_SMALL
+	/// Whitelist of model types that can use this upgrade.
 	var/list/model_type = null
 	/// Bitflags listing model compatibility. Used in the exosuit fabricator for creating sub-categories.
 	var/list/model_flags = NONE
@@ -685,6 +686,7 @@
 /obj/item/borg_restart_board
 	name = "cyborg emergency reboot module"
 	desc = "A reusable firmware reset tool that can force a reboot of a disabled-but-repaired cyborg, bringing it back online."
+	icon = 'icons/mob/silicon/robot_items.dmi'
 	icon_state = "cyborg_upgrade1"
 	w_class = WEIGHT_CLASS_SMALL
 
