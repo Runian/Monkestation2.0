@@ -655,7 +655,7 @@
 /obj/item/borg/upgrade/nvmeson
 	name = "night vision mesons upgrade"
 	desc = "An augmentation to the standard meson sensor array seen on mining and engineering cyborgs to increase low light visibility."
-	icon_state = "cyborg_engineer"
+	icon_state = "module_engineer"
 	require_model = TRUE
 	model_type = list(/obj/item/robot_model/engineering, /obj/item/robot_model/miner)
 	model_flags = BORG_MODEL_ENGINEERING
@@ -665,11 +665,20 @@
 /obj/item/borg/upgrade/circuit_app
 	name = "circuit manipulation apparatus"
 	desc = "An engineering cyborg upgrade allowing for manipulation of circuit boards."
-	icon_state = "medical_engineer"
+	icon_state = "module_engineer"
 	require_model = TRUE
 	model_type = list(/obj/item/robot_model/engineering, /obj/item/robot_model/saboteur)
 	model_flags = BORG_MODEL_ENGINEERING
 	items_to_add = list(/obj/item/borg/apparatus/circuit)
+
+/obj/item/borg/upgrade/better_clamp
+	name = "improved integrated hydraulic clamp"
+	desc = "An improved hydraulic clamp that trades its storage quantity to allow for bigger packages to be picked up instead!"
+	icon_state = "module_cargo"
+	require_model = TRUE
+	model_type = list(/obj/item/robot_model/cargo)
+	model_flags = BORG_MODEL_CARGO
+	items_to_add = list(/obj/item/borg/hydraulic_clamp/better)
 
 /// This isn't an upgrade or part of the same path, but I'm gonna just stick it here because it's a tool used on cyborgs.
 // A reusable tool that can bring borgs back to life. They gotta be repaired first, though.
