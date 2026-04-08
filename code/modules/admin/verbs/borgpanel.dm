@@ -36,14 +36,21 @@ ADMIN_VERB(borg_panel, R_ADMIN, FALSE, "Show Borg Panel", ADMIN_VERB_NO_DESCRIPT
 		"scrambledcodes" = borg.scrambledcodes
 	)
 	.["upgrades"] = list()
-	for (var/upgradetype in subtypesof(/obj/item/borg/upgrade)-/obj/item/borg/upgrade/hypospray) //hypospray is a dummy parent for hypospray upgrades
-		var/obj/item/borg/upgrade/upgrade = upgradetype
-		if (initial(upgrade.model_type) && !is_type_in_list(borg.model, initial(upgrade.model_type))) // Upgrade requires a different model
+
+	var/list/excluded_upgrades = list(
+		/obj/item/borg/upgrade/hypospray, // Parent/base upgrades.
+		/obj/item/borg/upgrade/transform,
+		/obj/item/borg/upgrade/modkit,
+		/obj/item/borg/upgrade/modkit/aoe,
+		/obj/item/borg/upgrade/modkit/minebot_passthrough, // Non-proper upgrades (not rated for cyborgs, useless, or shouldn't be given).
+		/obj/item/borg/upgrade/modkit/cooldown/minebot,
+		/obj/item/borg/upgrade/modkit/trigger_guard,
+		/obj/item/borg/upgrade/rename)
+	for(var/upgradetype in subtypesof(/obj/item/borg/upgrade) - excluded_upgrades)
+		var/obj/item/borg/upgrade/upgrade = new upgradetype() // Stinky, but works. Must be created in order to access any lists as initial() does not work on lists.
+		if(upgrade.model_type && !is_type_in_list(borg.model, upgrade.model_type))
 			continue
-		var/installed = FALSE
-		if (locate(upgradetype) in borg)
-			installed = TRUE
-		.["upgrades"] += list(list("name" = initial(upgrade.name), "installed" = installed, "type" = upgradetype))
+		.["upgrades"] += list(list("name" = initial(upgrade.name), "installed" = locate(upgradetype) in borg.upgrades, "type" = upgradetype))
 	.["laws"] = borg.laws ? borg.laws.get_law_list(include_zeroth = TRUE, render_html = FALSE) : list()
 	.["channels"] = list()
 	for (var/k in GLOB.radiochannels)
