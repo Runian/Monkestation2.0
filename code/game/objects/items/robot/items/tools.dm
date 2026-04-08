@@ -294,7 +294,7 @@
 	if(upgraded == upgrade)
 		return
 	upgraded = upgrade
-	for(var/tool_reference as anything in atoms)
+	for(var/tool_reference in atoms)
 		var/obj/item/tool = atoms[tool_reference]
 		if(QDELETED(tool))
 			continue
