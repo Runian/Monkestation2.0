@@ -1,4 +1,0 @@
-author: "JohnFulpWillard"
-delete-after: True
-changes:
-  - bugfix: "Extrapolators no longer work on hologram mobs (monkeys)."

@@ -1,4 +1,0 @@
-author: "Absolucy"
-delete-after: True
-changes:
-  - qol: "Attempting to cult convert someone who's banned from blood cult will always sacrifice them instead."

@@ -1,5 +1,0 @@
-author: "throwawayuseless, JohnFulpWillard"
-delete-after: True
-changes:
-  - rscadd: "Added the Immunocompromised quirk for -6 points. Don't catch a cold!"
-  - bugfix: "Fixes rot and such not spreading disease unless you're wearing bio-protection."
