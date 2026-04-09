@@ -93,7 +93,6 @@
 		borg.notify_ai(AI_NOTIFICATION_CYBORG_RENAMED, oldname, borg.real_name)
 	usr.log_message("used a cyborg reclassification board to rename [oldkeyname] to [key_name(borg)]", LOG_GAME)
 
-
 /obj/item/borg/upgrade/disablercooler
 	name = "cyborg rapid disabler cooling module"
 	desc = "Used to cool a mounted disabler, increasing the potential current in it and thus its recharge rate."
@@ -206,7 +205,7 @@
 /obj/item/borg/upgrade/syndicate/action(mob/living/silicon/robot/borg, mob/living/user = usr)
 	. = ..()
 	if(!.)
-		return
+		return .
 	if(borg.emagged)
 		return FALSE
 	borg.SetEmagged(TRUE)
@@ -240,12 +239,6 @@
 	if(!.)
 		return .
 	borg.remove_traits(list(TRAIT_LAVA_IMMUNE, TRAIT_SNOWSTORM_IMMUNE), type)
-
-
-
-
-
-
 
 /obj/item/borg/upgrade/selfrepair
 	name = "self-repair module"
