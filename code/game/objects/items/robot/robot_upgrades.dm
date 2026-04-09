@@ -248,7 +248,7 @@
 	/// The amount of burn and brute damage to be healed.
 	var/repair_amount = 1
 	/// The amount of deciseconds between repairs.
-	var/repair_cooldown = 0.4 SECONDS
+	var/repair_cooldown = 4 SECONDS
 	/// The energy cost of the repair.
 	var/energy_cost = 0.01 * STANDARD_CELL_CHARGE
 	/// Is self-repair active?
@@ -329,7 +329,7 @@
 		borg.cell.use(energy_cost)
 	else
 		borg.cell.use(0.005 * STANDARD_CELL_CHARGE)
-	COOLDOWN_START(src, next_repair, repair_cooldown SECONDS)
+	COOLDOWN_START(src, next_repair, repair_cooldown)
 	if(!TIMER_COOLDOWN_FINISHED(src, COOLDOWN_BORG_SELF_REPAIR))
 		return
 	TIMER_COOLDOWN_START(src, COOLDOWN_BORG_SELF_REPAIR, 200 SECONDS)
