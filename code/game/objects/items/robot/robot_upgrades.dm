@@ -155,7 +155,7 @@
 	model_type = list(/obj/item/robot_model/miner)
 	model_flags = BORG_MODEL_MINER
 	items_to_add = list(/obj/item/pickaxe/drill/diamonddrill)
-	items_to_remove = list(/obj/item/pickaxe/drill, /obj/item/shovel)
+	items_to_remove = list(/obj/item/pickaxe/drill/cyborg, /obj/item/shovel)
 
 /obj/item/borg/upgrade/soh
 	name = "mining cyborg satchel of holding"
@@ -175,7 +175,7 @@
 	model_type = list(/obj/item/robot_model/janitor)
 	model_flags = BORG_MODEL_JANITOR
 	items_to_add = list(/obj/item/storage/bag/trash/bluespace/cyborg)
-	items_to_remove = list(/obj/item/storage/bag/trash)
+	items_to_remove = list(/obj/item/storage/bag/trash/cyborg)
 
 /obj/item/borg/upgrade/amop
 	name = "janitor cyborg advanced mop"
@@ -185,7 +185,7 @@
 	model_type = list(/obj/item/robot_model/janitor)
 	model_flags = BORG_MODEL_JANITOR
 	items_to_add = list(/obj/item/mop/advanced)
-	items_to_remove = list(/obj/item/mop)
+	items_to_remove = list(/obj/item/mop/cyborg)
 
 /obj/item/borg/upgrade/prt
 	name = "janitor cyborg plating repair tool"
