@@ -16,21 +16,25 @@
 	throw_speed = 3
 	throw_range = 7
 	custom_materials = list(/datum/material/gold = SMALL_MATERIAL_AMOUNT * 0.5)
-	/// This is where our laws get put at for the module
-	var/list/laws = list()
-	/// Used to skip laws being checked (for reset & remove boards that have no laws)
+	/// The laws associated with this module.
+	var/datum/ai_laws/laws
+	/// Allow installing with no laws and ignoring of the lawcap.
 	var/bypass_law_amt_check = FALSE
 
 /obj/item/ai_module/Initialize(mapload)
 	. = ..()
-	if(mapload && HAS_TRAIT(SSstation, STATION_TRAIT_UNIQUE_AI) && is_station_level(z))
+	if(!mapload && HAS_TRAIT(SSstation, STATION_TRAIT_UNIQUE_AI) && is_station_level(z))
 		var/delete_module = handle_unique_ai()
 		if(delete_module)
 			return INITIALIZE_HINT_QDEL
+	laws = new()
 
 /obj/item/ai_module/examine(mob/user as mob)
 	. = ..()
 	var/examine_laws = display_laws()
+	var/test_var = ""
+	if(test_var)
+		to_chat("empty strings are considered true") // TODO: delete this
 	if(examine_laws)
 		. += "\n" + examine_laws
 
@@ -40,82 +44,81 @@
 
 /// Returns a text display of the laws for the module.
 /obj/item/ai_module/proc/display_laws()
-	// Used to assemble the laws to show to an examining user.
-	var/assembled_laws = ""
-
-	if(laws.len)
-		assembled_laws += "<B>Programmed Law[(laws.len > 1) ? "s" : ""]:</B><br>"
-		for(var/law in laws)
-			assembled_laws += "\"[law]\"<br>"
-
+	if(!laws)
+		return ""
+	var/list/law_list = laws.get_law_list(include_zeroth = TRUE)
+	if(!length(law_list))
+		return ""
+	var/assembled_laws = "<B>Programmed Law[(law_list.len > 1) ? "s" : ""]:</B><br>"
+	for(var/law in law_list)
+		assembled_laws += "\"[law]\"<br>"
 	return assembled_laws
 
-///what this module should do if it is mapload spawning on a unique AI station trait round.
+/// What this module should do if it is mapload spawning on a unique AI station trait round.
 /obj/item/ai_module/proc/handle_unique_ai()
-	return SHOULD_QDEL_MODULE //instead of the roundstart bid to un-unique the AI, there will be a research requirement for it.
+	return SHOULD_QDEL_MODULE // Instead of the roundstart bid to un-unique the AI, there will be a research requirement for it.
 
-//The proc other things should be calling
+/// Handles checks, overflowing, calling [proc/transmitInstructions], and logging.
 /obj/item/ai_module/proc/install(datum/ai_laws/law_datum, mob/user)
-	if(!bypass_law_amt_check && (!laws.len || laws[1] == "")) //So we don't loop trough an empty list and end up with runtimes.
+	if(!laws) // This shouldn't be happening, but if it does:
+		to_chat(user, span_warning("The board fizzles out..."))
+		return
+
+	if(!law_datum) // This shouldn't be happening too, but if it does:
+		to_chat(user, span_warning("You use the board to no effect."))
+		return
+
+	// Zero law changes expected and no exception was given.
+	if((!laws.zeroth && !laws.hacked.len && !laws.ion.len && !laws.inherent.len && !laws.supplied.len) && !bypass_law_amt_check)
 		to_chat(user, span_warning("ERROR: No laws found on board."))
 		return
 
+	// Handle the lawcaps.
+	var/total_laws = law_datum.get_law_amount(list(LAW_HACKED = 1, LAW_ION = 1, LAW_INHERENT = 1, LAW_SUPPLIED = 1)) // Zeroth excluded to avoid law uploading cheese to antag check.
 	var/overflow = FALSE
-	//Handle the lawcap
-	if(law_datum)
-		var/tot_laws = 0
-		var/included_lawsets = list(law_datum.supplied, law_datum.ion, law_datum.hacked, laws)
+	if(total_laws > CONFIG_GET(number/silicon_max_law_amount) && !bypass_law_amt_check)
+		to_chat(user, span_alert("Not enough memory allocated to [law_datum.owner ? law_datum.owner : "the AI core"]'s law processor to handle this amount of laws."))
+		message_admins("[ADMIN_LOOKUPFLW(user)] tried to upload laws to [law_datum.owner ? ADMIN_LOOKUPFLW(law_datum.owner) : "an AI core"] that would exceed the law cap.")
+		log_silicon("[key_name(user)] tried to upload laws to [law_datum.owner ? key_name(law_datum.owner) : "an AI core"] that would exceed the law cap.")
+		overflow = TRUE
 
-		// if the ai module is a core module we don't count inherent laws since they will be replaced
-		// however the freeformcore doesn't replace inherent laws so we check that too
-		if(!istype(src, /obj/item/ai_module/core) || istype(src, /obj/item/ai_module/core/freeformcore))
-			included_lawsets += list(law_datum.inherent)
-
-		for(var/lawlist in included_lawsets)
-			for(var/mylaw in lawlist)
-				if(mylaw != "")
-					tot_laws++
-
-		if(tot_laws > CONFIG_GET(number/silicon_max_law_amount) && !bypass_law_amt_check)//allows certain boards to avoid this check, eg: reset
-			to_chat(user, span_alert("Not enough memory allocated to [law_datum.owner ? law_datum.owner : "the AI core"]'s law processor to handle this amount of laws."))
-			message_admins("[ADMIN_LOOKUPFLW(user)] tried to upload laws to [law_datum.owner ? ADMIN_LOOKUPFLW(law_datum.owner) : "an AI core"] that would exceed the law cap.")
-			log_silicon("[key_name(user)] tried to upload laws to [law_datum.owner ? key_name(law_datum.owner) : "an AI core"] that would exceed the law cap.")
-			overflow = TRUE
-
-	var/law2log = transmitInstructions(law_datum, user, overflow) //Freeforms return something extra we need to log
+	var/law2log = transmitInstructions(law_datum, user, overflow) // Some modules return extra things that we need to log.
 	if(law_datum.owner)
 		to_chat(user, span_notice("Upload complete. [law_datum.owner]'s laws have been modified."))
 		law_datum.owner.law_change_counter++
 	else
 		to_chat(user, span_notice("Upload complete."))
 
-	var/time = time2text(world.realtime,"hh:mm:ss")
-	var/ainame = law_datum.owner ? law_datum.owner.name : "empty AI core"
-	var/aikey = law_datum.owner ? law_datum.owner.ckey : "null"
-
-	//affected cyborgs are cyborgs linked to the AI with lawsync enabled
+ 	// Affected cyborgs are cyborgs linked to the AI with lawsync enabled.
 	var/affected_cyborgs = list()
 	var/list/borg_txt = list()
 	var/list/borg_flw = list()
 	if(isAI(law_datum.owner))
 		var/mob/living/silicon/ai/owner = law_datum.owner
 		for(var/mob/living/silicon/robot/owned_borg as anything in owner.connected_robots)
-			if(owned_borg.connected_ai && owned_borg.lawupdate)
-				affected_cyborgs += owned_borg
-				borg_flw += "[ADMIN_LOOKUPFLW(owned_borg)], "
-				borg_txt += "[owned_borg.name]([owned_borg.key]), "
-
+			if(!owned_borg.connected_ai || !owned_borg.lawupdate)
+				continue
+			affected_cyborgs += owned_borg
+			borg_flw += "[ADMIN_LOOKUPFLW(owned_borg)], "
+			borg_txt += "[owned_borg.name]([owned_borg.key]), "
 	borg_txt = borg_txt.Join()
+
+	var/time = time2text(world.realtime,"hh:mm:ss")
+	var/ainame = law_datum.owner ? law_datum.owner.name : "empty AI core"
+	var/aikey = law_datum.owner ? law_datum.owner.ckey : "null"
+
 	GLOB.lawchanges.Add("[time] <B>:</B> [user.name]([user.key]) used [src.name] on [ainame]([aikey]).[law2log ? " The law specified [law2log]" : ""], [length(affected_cyborgs) ? ", impacting synced borgs [borg_txt]" : ""]")
 	log_silicon("LAW: [key_name(user)] used [src.name] on [key_name(law_datum.owner)] from [AREACOORD(user)].[law2log ? " The law specified [law2log]" : ""], [length(affected_cyborgs) ? ", impacting synced borgs [borg_txt]" : ""]")
 	message_admins("[ADMIN_LOOKUPFLW(user)] used [src.name] on [ADMIN_LOOKUPFLW(law_datum.owner)] from [AREACOORD(user)].[law2log ? " The law specified [law2log]" : ""] , [length(affected_cyborgs) ? ", impacting synced borgs [borg_flw.Join()]" : ""]")
 	if(law_datum.owner)
 		deadchat_broadcast("<b> changed [span_name("[ainame]")]'s laws at [get_area_name(user, TRUE)].</b>", span_name("[user]"), follow_target=user, message_type=DEADCHAT_LAWCHANGE)
 
-//The proc that actually changes the silicon's laws.
+
+/// Contains the changes to the silicon's laws.
 /obj/item/ai_module/proc/transmitInstructions(datum/ai_laws/law_datum, mob/sender, overflow = FALSE)
-	if(law_datum.owner)
-		to_chat(law_datum.owner, span_userdanger("[sender] has uploaded a change to the laws you must follow using a [name]."))
+	if(!law_datum.owner)
+		return
+	to_chat(law_datum.owner, span_userdanger("[sender] has uploaded a change to the laws you must follow using a [name]."))
 
 /obj/item/ai_module/core
 	desc = "An AI Module for programming core laws to an AI."
