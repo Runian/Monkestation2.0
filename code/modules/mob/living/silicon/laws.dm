@@ -31,7 +31,7 @@
 /mob/living/silicon/proc/deadchat_lawchange()
 	var/list/the_laws = laws.get_law_list(include_zeroth = TRUE)
 	var/lawtext = the_laws.Join("<br/>")
-	deadchat_broadcast("'s <b>laws were changed.</b> <a href='byond://?src=[REF(src)]&dead=1&printlawtext=[url_encode(lawtext)]'>View</a>", span_name("[src]"), follow_target=src, message_type=DEADCHAT_LAWCHANGE)
+	deadchat_broadcast("'s <b>laws were changed.</b> <a href='byond://?src=[REF(src)]&print_law_text=[url_encode(lawtext)]'>View</a>", span_name("[src]"), follow_target=src, message_type=DEADCHAT_LAWCHANGE)
 
 /// Handles the aftermath of a law change.
 /mob/living/silicon/proc/post_lawchange(announce = TRUE)
@@ -59,11 +59,6 @@
 	laws_sanity_check()
 	laws.clear_zeroth_law(force)
 	post_lawchange(announce)
-
-/// Toggles if the silicon wants to state their zeroth law.
-/mob/living/silicon/proc/toggle_zeroth_state()
-	laws_sanity_check()
-	laws.toggle_zeroth_state()
 
 //
 // Hacked Laws
@@ -99,11 +94,6 @@
 	laws.edit_hacked_law(index, law)
 	post_lawchange(announce)
 
-/// Toggles if the silicon wants to state a specific hacked law.
-/mob/living/silicon/proc/toggle_hacked_state(index, announce = TRUE)
-	laws_sanity_check()
-	laws.toggle_hacked_state(index)
-
 //
 // Ion Laws
 //
@@ -137,11 +127,6 @@
 	laws_sanity_check()
 	laws.edit_ion_law(index, law)
 	post_lawchange(announce)
-
-/// Toggles if the silicon wants to state a specific ion law.
-/mob/living/silicon/proc/flip_ion_state(index, announce = TRUE)
-	laws_sanity_check()
-	laws.flip_ion_state(index)
 
 //
 // Inherent Laws
@@ -177,11 +162,6 @@
 	laws.edit_inherent_law(index, law)
 	post_lawchange(announce)
 
-/// Toggles if the silicon wants to state a specific inherent law.
-/mob/living/silicon/proc/flip_inherent_state(index, announce = TRUE)
-	laws_sanity_check()
-	laws.flip_inherent_state(index)
-
 //
 // Supplied Laws
 //
@@ -216,11 +196,6 @@
 	laws_sanity_check()
 	laws.edit_supplied_law(index, law)
 	post_lawchange(announce)
-
-/// Toggles if the silicon wants to state a specific supplied law.
-/mob/living/silicon/proc/flip_supplied_state(index, announce = TRUE)
-	laws_sanity_check()
-	laws.flip_supplied_state(index)
 
 //
 // Unsorted

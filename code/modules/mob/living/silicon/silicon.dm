@@ -27,14 +27,6 @@
 	var/list/alarm_types_show = list(ALARM_ATMOS = 0, ALARM_ALARM_POWER = 0, ALARM_CAMERA = 0, ALARM_MOTION = 0)
 	var/list/alarm_types_clear = list(ALARM_ATMOS = 0, ALARM_ALARM_POWER = 0, ALARM_CAMERA = 0, ALARM_MOTION = 0)
 
-	//These lists will contain each law that should be announced / set to yes in the state laws menu.
-	///List keeping track of which laws to announce
-	var/list/lawcheck = list()
-	///List keeping track of hacked laws to announce
-	var/list/hackedcheck = list()
-	///List keeping track of ion laws to announce
-	var/list/ioncheck = list()
-
 	///Are our siliconHUDs on? TRUE for yes, FALSE for no.
 	var/sensors_on = TRUE
 	var/med_hud = DATA_HUD_MEDICAL_ADVANCED //Determines the med hud to use
@@ -199,52 +191,71 @@
 	return laws_to_return
 
 /mob/living/silicon/Topic(href, href_list)
-	// monkestation edit: extra sanity checks
 	if(QDELETED(usr) || QDELETED(usr.client))
 		return
-	if (href_list["lawc"]) // Toggling whether or not a law gets stated by the State Laws verb
-		var/law_index = text2num(href_list["lawc"])
-		var/law = assemble_laws()[law_index + 1]
-		if (law in lawcheck)
-			lawcheck -= law
-		else
-			lawcheck += law
+
+	if(href_list["law_zeroth"])
+		laws.zeroth_state = !laws.zeroth_state
 		checklaws()
+		return
 
-	if (href_list["lawi"])
-		var/law_index = text2num(href_list["lawi"])
-		var/law = laws.ion[law_index]
-		if (law in ioncheck)
-			ioncheck -= law
-		else
-			ioncheck += law
+	if(href_list["law_hacked"])
+		var/law_index = text2num(href_list["law_hacked"])
+		var/law_text = laws.hacked[law_index]
+		if(law_text)
+			if(law_text in laws.hacked_state)
+				laws.hacked_state += law_text
+			else
+				laws.hacked_state -= law_text
 		checklaws()
+		return
 
-	if (href_list["lawh"])
-		var/law_index = text2num(href_list["lawh"])
-		var/law = laws.hacked[law_index]
-		if (law in hackedcheck)
-			hackedcheck -= law
-		else
-			hackedcheck += law
+	if(href_list["law_ion"])
+		var/law_index = text2num(href_list["law_ion"])
+		var/law_text = laws.ion[law_index]
+		if(law_text)
+			if(law_text in laws.ion_state)
+				laws.ion_state += law_text
+			else
+				laws.ion_state -= law_text
 		checklaws()
+		return
 
-	if (href_list["laws"])
-		statelaws()
+	if(href_list["law_inherent"])
+		var/law_index = text2num(href_list["law_inherent"])
+		var/law_text = laws.inherent[law_index]
+		if(law_text)
+			if(law_text in laws.inherent_state)
+				laws.inherent_state += law_text
+			else
+				laws.inherent_state -= law_text
+		checklaws()
+		return
 
-	if (href_list["printlawtext"]) // this is kinda backwards
-		if (href_list["dead"] && (!isdead(usr) && !usr?.client?.holder)) // do not print deadchat law notice if the user is now alive
+	if(href_list["law_supplied"])
+		var/law_index = text2num(href_list["law_supplied"])
+		var/law_text = laws.supplied[law_index]
+		if(law_text && !isnull(laws.supplied_state[law_index]))
+			laws.supplied_state[law_index] = !laws.supplied_state[law_index]
+		checklaws()
+		return
+
+	if(href_list["state_laws"])
+		state_laws()
+		return
+
+	if(href_list["print_law_text"])
+		if(!isdead(usr) && !usr.client.holder) // Do not print deadchat law notice if the user is now alive.
 			to_chat(usr, span_warning("You cannot view law changes that were made while you were dead."))
 			return
-		to_chat(usr, href_list["printlawtext"])
-
-	return
+		to_chat(usr, href_list["print_law_text"])
 
 #define CHECK_DEAD if(stat == DEAD) { return; };
 
-/mob/living/silicon/proc/statelaws(force = 0)
+/mob/living/silicon/proc/state_laws(force = FALSE)
 	CHECK_DEAD
 	laws_sanity_check()
+
 	// Create a cache of our laws and lawcheck flags before we do anything else.
 	// These are used to prevent weirdness when laws are changed when the AI is mid-stating.
 	var/lawcache_zeroth = laws.zeroth
@@ -253,59 +264,59 @@
 	var/list/lawcache_inherent = laws.inherent.Copy()
 	var/list/lawcache_supplied = laws.supplied.Copy()
 
-	var/list/lawcache_lawcheck = lawcheck.Copy()
-	var/list/lawcache_ioncheck = ioncheck.Copy()
-	var/list/lawcache_hackedcheck = hackedcheck.Copy()
+	var/lawcache_zeroth_state = laws.zeroth_state
+	var/list/lawcache_hacked_state = laws.hacked_state.Copy()
+	var/list/lawcache_ion_state = laws.ion_state.Copy()
+	var/list/lawcache_inherent_state = laws.inherent_state.Copy()
+	var/list/lawcache_supplied_state = laws.supplied_state.Copy()
+
 	var/forced_log_message = "stating laws[force ? ", forced" : ""]"
-	//"radiomod" is inserted before a hardcoded message to change if and how it is handled by an internal radio.
+	// "radiomod" is inserted before a hardcoded message to change if and how it is handled by an internal radio.
 	say("[radiomod] Current Active Laws:", forced = forced_log_message)
 	sleep(1 SECONDS)
 	CHECK_DEAD
 
-	if (lawcache_zeroth)
-		if (force || (lawcache_zeroth in lawcache_lawcheck))
+	if(lawcache_zeroth)
+		if(force || lawcache_zeroth_state)
 			say("[radiomod] 0. [lawcache_zeroth]", forced = forced_log_message)
 			sleep(1 SECONDS)
 
 	CHECK_DEAD
-	for (var/index in 1 to length(lawcache_hacked))
+	for(var/index in 1 to length(lawcache_hacked))
 		var/law = lawcache_hacked[index]
-		var/num = ion_num()
-		if (length(law) <= 0)
+		if(!length(law))
 			continue
 		CHECK_DEAD
-		if (force || (law in lawcache_hackedcheck))
-			say("[radiomod] [num]. [law]", forced = forced_log_message)
+		if(force || (law in lawcache_hacked_state))
+			say("[radiomod] [ion_num()]. [law]", forced = forced_log_message)
 			sleep(1 SECONDS)
 
-	for (var/index in 1 to length(lawcache_ion))
+	for(var/index in 1 to length(lawcache_ion))
 		var/law = lawcache_ion[index]
-		var/num = ion_num()
-		if (length(law) <= 0)
-			return
+		if(!length(law))
+			continue
 		CHECK_DEAD
-		if (force || (law in lawcache_ioncheck))
-			say("[radiomod] [num]. [law]", forced = forced_log_message)
+		if(force || (law in lawcache_ion_state))
+			say("[radiomod] [ion_num()]. [law]", forced = forced_log_message)
 			sleep(1 SECONDS)
 
 	var/number = 1
-	for (var/index in 1 to length(lawcache_inherent))
+	for(var/index in 1 to length(lawcache_inherent))
 		var/law = lawcache_inherent[index]
-		if (length(law) <= 0)
+		if(!length(law))
 			continue
 		CHECK_DEAD
-		if (force || (law in lawcache_lawcheck))
+		if(force || (law in lawcache_inherent_state))
 			say("[radiomod] [number]. [law]", forced = forced_log_message)
 			number++
 			sleep(1 SECONDS)
 
-	for (var/index in 1 to length(lawcache_supplied))
+	for(var/index in 1 to length(lawcache_supplied))
 		var/law = lawcache_supplied[index]
-
-		if (length(law) <= 0)
+		if(!length(law))
 			continue
 		CHECK_DEAD
-		if (force || (law in lawcache_lawcheck))
+		if(!isnull(lawcache_supplied_state[index]) && (force || lawcache_supplied_state[index]))
 			say("[radiomod] [number]. [law]", forced = forced_log_message)
 			number++
 			sleep(1 SECONDS)
@@ -318,46 +329,42 @@
 	var/list = "<b>Which laws do you want to include when stating them for the crew?</b><br><br>"
 
 	var/law_display = "Yes"
-	if (laws.zeroth)
-		if (!(laws.zeroth in lawcheck))
+	if(laws.zeroth)
+		if(!laws.zeroth_state)
 			law_display = "No"
-		list += {"<A href='byond://?src=[REF(src)];lawc=0'>[law_display] 0:</A> <font color='#ff0000'><b>[laws.zeroth]</b></font><BR>"}
+		list += {"<A href='byond://?src=[REF(src)];law_zeroth=0'>[law_display] 0:</A> <font color='#ff0000'><b>[laws.zeroth]</b></font><BR>"}
 
-	for (var/index in 1 to length(laws.hacked))
-		law_display = "Yes"
+	for(var/index in 1 to length(laws.hacked))
 		var/law = laws.hacked[index]
-		if (length(law) > 0)
-			if (!(law in hackedcheck))
-				law_display = "No"
-			list += {"<A href='byond://?src=[REF(src)];lawh=[index]'>[law_display] [ion_num()]:</A> <font color='#660000'>[law]</font><BR>"}
+		if(!length(law))
+			continue
+		law_display = (law in laws.hacked_state) ? "Yes" : "No"
+		list += {"<A href='byond://?src=[REF(src)];law_hacked=[index]'>[law_display] [ion_num()]:</A> <font color='#660000'>[law]</font><BR>"}
 
-	for (var/index in 1 to length(laws.ion))
-		law_display = "Yes"
+	for(var/index in 1 to length(laws.ion))
 		var/law = laws.ion[index]
-		if (length(law) > 0)
-			if(!(law in ioncheck))
-				law_display = "No"
-			list += {"<A href='byond://?src=[REF(src)];lawi=[index]'>[law_display] [ion_num()]:</A> <font color='#547DFE'>[law]</font><BR>"}
+		if(!length(law))
+			continue
+		law_display = (law in laws.ion_state) ? "Yes" : "No"
+		list += {"<A href='byond://?src=[REF(src)];law_ion=[index]'>[law_display] [ion_num()]:</A> <font color='#547DFE'>[law]</font><BR>"}
 
 	var/number = 1
-	for (var/index in 1 to length(laws.inherent))
-		law_display = "Yes"
+	for(var/index in 1 to length(laws.inherent))
 		var/law = laws.inherent[index]
-		if (length(law) > 0)
-			if (!(law in lawcheck))
-				law_display = "No"
-			list += {"<A href='byond://?src=[REF(src)];lawc=[index]'>[law_display] [number]:</A> [law]<BR>"}
-			number++
+		if(!length(law))
+			continue
+		law_display = (law in laws.inherent_state) ? "Yes" : "No"
+		list += {"<A href='byond://?src=[REF(src)];law_inherent=[index]'>[law_display] [number]:</A> [law]<BR>"}
+		number++
 
 	for (var/index in 1 to length(laws.supplied))
-		law_display = "Yes"
 		var/law = laws.supplied[index]
-		if (length(law) > 0)
-			if (!(law in lawcheck))
-				law_display = "No"
-			list += {"<A href='byond://?src=[REF(src)];lawc=[number]'>[law_display] [number]:</A> <font color='#990099'>[law]</font><BR>"}
-			number++
-	list += {"<br><br><A href='byond://?src=[REF(src)];laws=1'>State Laws</A>"}
+		if(!length(law))
+			continue
+		law_display = laws.supplied_state[index] ? "Yes" : "No"
+		list += {"<A href='byond://?src=[REF(src)];law_supplied=[index]'>[law_display] [number]:</A> <font color='#990099'>[law]</font><BR>"}
+		number++
+	list += {"<br><br><A href='byond://?src=[REF(src)];state_laws=1'>State Laws</A>"}
 
 	usr << browse(list, "window=laws")
 

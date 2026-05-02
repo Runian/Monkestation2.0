@@ -209,8 +209,6 @@
 		give_messenger_ability()
 	GLOB.pai_list += src
 	make_laws()
-	for(var/law in laws.inherent)
-		lawcheck += law
 	var/obj/item/pai_card/pai_card = loc
 	if(!istype(pai_card)) // when manually spawning a pai, we create a card to put it into.
 		var/newcardloc = pai_card

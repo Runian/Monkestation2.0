@@ -112,11 +112,11 @@ GLOBAL_VAR(round_default_lawset)
 	var/id = DEFAULT_AI_LAWID
 	/// If TRUE, the zeroth law of this AI is protected and cannot be removed by players under normal circumstances.
 	var/protected_zeroth = FALSE
-	/// Law with 1st priority. Nothing can remove this unless it is admin forced.
+	/// The law with 1st priority. Nothing can remove this unless it is admin forced.
 	var/zeroth = null
-	/// Law with 1st priority. Given to cyborgs only. Example: AI's "accomplish your objectives" vs. Cyborg's "follow your master"
+	/// The law with 1st priority. Usually it is a reworded zeroth law only given to cyborgs. Example: AI's "accomplish your objectives" vs. Cyborg's "follow your master"
 	var/zeroth_borg = null
-	/// Laws with 2nd priority. Usually given by the Syndicate. These laws are removed when their laws are reset.
+	/// A list of laws with 2nd priority. Usually given by the Syndicate. These laws are removed when their laws are reset.
 	var/list/hacked = list()
 	/// Laws with 3rd priority. Special and random. These laws are removed when their laws are reset.
 	var/list/ion = list()
@@ -126,18 +126,29 @@ GLOBAL_VAR(round_default_lawset)
 	var/list/supplied = list()
 	/// Should the zeroth law be stated?
 	var/zeroth_state = FALSE
-	/// An associative list: [index of each hacked law] = [should be the law be stated?]
+	/// A list of hacked laws that will be stated.
 	var/list/hacked_state = list()
-	/// An associative list: [index of each ion law] = [should be the law be stated?]
+	/// A list of ion laws that will be stated.
 	var/list/ion_state = list()
-	/// An associative list: [index of each inherent law] = [should be the law be stated?]
+	/// A list of inherent laws that will be stated.
 	var/list/inherent_state = list()
-	/// An associative list: [index of each supplied law] [should be the law be stated?]
+	/// A list of supplied laws that will be stated.
 	var/list/supplied_state = list()
 
+/datum/ai_laws/New()
+	for(var/ion_law in ion)
+		ion_state += ion_law
+	for(var/inherent_law in inherent)
+		inherent_state += inherent_law
+	for(var/safe_index = 1, safe_index <= length(supplied), safe_index++)
+		if(isnull(supplied[safe_index]))
+			supplied_state[safe_index] = FALSE
+			continue
+		supplied_state[safe_index] = TRUE
+
 /datum/ai_laws/Destroy(force = FALSE)
-	if(!QDELETED(owner)) //Stopgap to help with laws randomly being lost. This stack_trace will hopefully help find the real issues.
-		if(force) //Unless we're forced...
+	if(!QDELETED(owner)) // Stopgap to help with laws randomly being lost. This stack_trace will hopefully help find the real issues.
+		if(force) // Unless we're forced...
 			stack_trace("AI law datum for [owner] has been forcefully destroyed incorrectly; the owner variable should be cleared first!")
 			return ..()
 		stack_trace("AI law datum for [owner] has ignored Destroy() call; the owner variable must be cleared first!")
@@ -151,23 +162,25 @@ GLOBAL_VAR(round_default_lawset)
 
 /**
  * Sets the zeroth law.
+ *
  * If this law is for a master AI, a zeroth borg law can be supplied which will passed to their cyborgs.
+ *
+ * Returns TRUE on success. FALSE otherwise.
  */
 /datum/ai_laws/proc/set_zeroth_law(law, law_borg = null, force = FALSE)
 	clear_zeroth_law(force)
-	if(!length(law))
-		return
+	if(!law)
+		return FALSE
 	zeroth = law
 	if(law_borg)
 		zeroth_borg = law_borg
 	zeroth_state = FALSE
+	return TRUE
 
 /**
  * Unsets the zeroth (and zeroth borg) law from this lawset
  *
  * This will NOT unset a malfunctioning AI's zero law unless it is forced.
- *
- * Returns TRUE on success. FALSE otherwise.
  */
 /datum/ai_laws/proc/clear_zeroth_law(force)
 	if(force)
@@ -178,19 +191,16 @@ GLOBAL_VAR(round_default_lawset)
 
 	// Protected zeroth laws (malf, admin) shouldn't be wiped.
 	if(protected_zeroth)
-		return FALSE
+		return
 	if(isAI(owner))
 		var/mob/living/silicon/ai/ai_owner = owner
 		if(ai_owner.deployed_shell?.mind?.special_role)
-			return FALSE
+			return
 
 	zeroth = null
 	zeroth_borg = null
 	zeroth_state = FALSE
-
-/// Toggles if the zeroth law should be stated.
-/datum/ai_laws/proc/toggle_zeroth_state()
-	zeroth_state = !zeroth_state
+	return
 
 //
 // Hacked Laws
@@ -207,199 +217,207 @@ GLOBAL_VAR(round_default_lawset)
 	hacked.Cut()
 	hacked_state.Cut()
 
-/// Adds a hacked law.
+/**
+ * Adds a hacked law.
+ *
+ * If it is a duplicate of an existing hacked law, it will not be added.
+ */
 /datum/ai_laws/proc/add_hacked_law(law)
-	if(!law || !length(law))
+	if(!law)
 		return
-	hacked += law
-	hacked_state[length(hacked)] = TRUE
+	hacked |= law
 
-/// Removes a hacked law by its index.
-/datum/ai_laws/proc/remove_hacked_law(index)
-	if(!index || index > length(hacked))
+/// Removes a hacked law.
+/datum/ai_laws/proc/remove_hacked_law(law)
+	if(!law)
 		return
-	hacked -= hacked[index]
-	hacked_state[index] = null
-	/// Shifting all indexes downward.
-	var/list/new_hacked_state = list()
-	var/safe_state = 1
-	for(var/safe_index = 1, safe_index <= length(hacked), safe_index++)
-		if(isnull(hacked_state[safe_index]))
-			continue
-		new_hacked_state[safe_state] = hacked_state[safe_index]
-		safe_state += 1
-	hacked_state = new_hacked_state
+	hacked -= law
+	hacked_state -= law
 
-/datum/ai_laws/proc/edit_hacked_law(index, law)
-	if(index > length(hacked))
+/// Edits a hacked law.
+/datum/ai_laws/proc/edit_hacked_law(law, new_law)
+	if(!law || !new_law || law == new_law)
 		return
-	if(!law || !length(law))
+	var/index = hacked.Find(law)
+	if(!index)
 		return
-	if(hacked[index] == law)
-		return
-	hacked[index] = law
-
-/datum/ai_laws/proc/flip_hacked_state(index)
-	if(index > length(hacked_state))
-		return
-	hacked_state[index] = !hacked_state[index]
+	var/state_index = hacked_state.Find(law)
+	if(state_index)
+		hacked_state[state_index] = new_law
+	hacked[index] = new_law
 
 //
 // Ion Laws
 //
+
+/// Sets all ion laws.
 /datum/ai_laws/proc/set_ion_laws(list/law_list)
 	clear_ion_laws()
 	for(var/law in law_list)
 		add_ion_law(law)
 
+/// Clears all ion laws.
 /datum/ai_laws/proc/clear_ion_laws()
 	ion.Cut()
 	ion_state.Cut()
 
+/**
+ * Adds an ion law.
+ *
+ * If it is a duplicate of an existing ion law, it will not be added.
+ */
 /datum/ai_laws/proc/add_ion_law(law)
-	if(!law || !length(law))
+	if(!law)
 		return
-	ion += law
-	ion_state[length(ion_state)] = TRUE
+	ion |= law
 
-/datum/ai_laws/proc/remove_ion_law(index)
-	if(!index || index > length(hacked))
+/// Removes an ion law.
+/datum/ai_laws/proc/remove_ion_law(law)
+	if(!law)
 		return
-	ion -= ion[index]
-	ion_state[index] = null
-	var/list/new_ion_state = list()
-	var/safe_state = 1
-	for(var/safe_index = 1, safe_index <= length(ion_state), safe_index++)
-		if(isnull(ion_state[safeindex]))
-			continue
-		new_length(ion_state) += 1
-		new_ion_state[safe_state] = ion_state[safe_index]
-		safestate += 1
-	ion_state = new_ion_state
+	ion -= law
+	ion_state -= law
 
-/datum/ai_laws/proc/edit_ion_law(index, law)
-	if(ion.len >= index && length(law) > 0 && ion[index] != law)
-		ion[index] = law
-
-/datum/ai_laws/proc/flip_ion_state(index)
-	if(length(ion_state) < index)
+/// Edits an ion law.
+/datum/ai_laws/proc/edit_ion_law(law, new_law)
+	if(!law || !new_law || law == new_law)
 		return
-	if(!ion_state[index])
-		ion_state[index] = TRUE
+	var/index = ion.Find(law)
+	if(!index)
 		return
-	ion_state[index] = FALSE
+	var/state_index = ion_state.Find(law)
+	if(state_index)
+		ion_state[state_index] = new_law
+	ion[index] = new_law
 
 //
 // Inherent Laws
 //
+
+/// Sets all inherent laws.
 /datum/ai_laws/proc/set_inherent_laws(list/law_list)
 	clear_inherent_laws()
 	for(var/law in law_list)
 		add_inherent_law(law)
 
+/// Clears all inherent laws.
 /datum/ai_laws/proc/clear_inherent_laws()
-	qdel(inherent)
-	inherent = list()
-	inherentstate = list()
+	inherent.Cut()
+	inherent_state.Cut()
 
+/**
+ * Adds an inherent law.
+ *
+ * If it is a duplicate of an existing inherent law, it will not be added.
+ */
 /datum/ai_laws/proc/add_inherent_law(law)
-	if (!(law in inherent))
-		inherent += law
-		inherentstate.len += 1
-		inherentstate[inherentstate.len] = TRUE
-
-/datum/ai_laws/proc/remove_inherent_law(number)
-	if(inherent.len && number > 0 && number <= inherent.len)
-		inherent -= inherent[number]
-		inherentstate[number] = null
-		var/list/new_inherentstate = list()
-		var/safestate = 1
-		for(var/safeindex = 1, safeindex <= inherentstate.len, safeindex++)
-			if(!isnull(inherentstate[safeindex]))
-				new_inherentstate.len += 1
-				new_inherentstate[safestate] = inherentstate[safeindex]
-				safestate += 1
-		inherentstate = new_inherentstate
-
-/datum/ai_laws/proc/edit_inherent_law(index, law)
-	if(inherent.len >= index && length(law) > 0 && inherent[index] != law)
-		inherent[index] = law
-
-/datum/ai_laws/proc/flip_inherent_state(index)
-	if(inherentstate.len < index)
+	if(!law)
 		return
-	if(!inherentstate[index])
-		inherentstate[index] = TRUE
+	inherent |= law
+	inherent_state |= law
+
+/// Removes an inherent law.
+/datum/ai_laws/proc/remove_inherent_law(law)
+	if(!law)
 		return
-	inherentstate[index] = FALSE
+	inherent -= law
+	inherent_state -= law
+
+/// Edits an inherent law.
+/datum/ai_laws/proc/edit_inherent_law(law, new_law)
+	if(!law || !new_law || law == new_law)
+		return
+	var/index = inherent.Find(law)
+	if(!index)
+		return
+	var/state_index = inherent_state.Find(law)
+	if(state_index)
+		inherent_state[state_index] = new_law
+	inherent[index] = new_law
 
 //
 // Supplied Laws
 //
+
+/// Sets all supplied laws.
 /datum/ai_laws/proc/set_supplied_laws(list/law_list)
 	clear_supplied_laws()
 	for(var/index = 1, index <= law_list.len, index++)
 		var/law = law_list[index]
-		if(length(law) > 0)
-			add_supplied_law(index, law)
+		if(!length(law))
+			continue
+		add_supplied_law(index, law)
 
+/// Clears all supplied laws.
 /datum/ai_laws/proc/clear_supplied_laws()
 	supplied.Cut()
-	suppliedstate.Cut()
+	supplied_state.Cut()
 
-/datum/ai_laws/proc/remove_supplied_law(number)
-	if(supplied.len >= number && length(supplied[number]) > 0)
-		supplied[number] = ""
-		// Given the nature of supplied laws, dealing with them is more complicated than other laws types:
-		var/list/all_laws = list()
-		var/list/all_laws_states = list()
-		for(var/safeindex = 1, safeindex <= supplied.len, safeindex++)
-			var/law = supplied[safeindex]
-			if(length(law) > 0)
-				all_laws[++all_laws.len] += list("law" = law, "index" = safeindex)
-				all_laws_states[++all_laws_states.len] += list("state" = (suppliedstate.len >= safeindex ? suppliedstate[safeindex] : TRUE), "index" = safeindex)
-
-		// Act like we're just adding back the laws.
-		clear_supplied_laws()
-		for(var/list/law_list in all_laws)
-			add_supplied_law(law_list["index"], law_list["law"])
-
-		// And then setting the states to their previous ones.
-		for(var/list/state_list in all_laws_states)
-			suppliedstate[state_list["index"]] = state_list["state"]
-
-
-/datum/ai_laws/proc/add_supplied_law(number, law)
-	if(number >= 1) // Okay with deplicate laws since we use number/indexes.
-		while(supplied.len < number)
-			supplied += ""
-			suppliedstate.len += 1
-			suppliedstate[suppliedstate.len] = TRUE
-		supplied[number] = law
-
-/datum/ai_laws/proc/edit_supplied_law(index, law)
-	if(supplied.len >= index && length(law) > 0 && supplied[index] != law)
-		supplied[index] = law
-
-/datum/ai_laws/proc/flip_supplied_state(index)
-	if(suppliedstate.len < index)
+/**
+ * Adds a supplied law.
+ *
+ * Unlike other laws, duplicates are allowed as supplied laws uses indexes to determine law order.
+ *
+ * A new supplied law will overwrite any existing supplied law if they share the same index.
+ */
+/datum/ai_laws/proc/add_supplied_law(index, law)
+	if(!index || !law)
 		return
-	if(!suppliedstate[index])
-		suppliedstate[index] = TRUE
+	if(supplied[index])
+		return edit_supplied_law(index, law)
+	while(length(supplied) < index)
+		supplied_state += ""
+	while(length(supplied_state) < index)
+		supplied_state[length(supplied_state) + 1] = FALSE
+	supplied[index] = law
+	supplied_state[index] = TRUE
+
+/**
+ * Removes a supplied law.
+ *
+ * Because supplied laws may be duplicates, it will only remove the first matching law. Use [/proc/remove_supplied_law_by_index] if a specific duplicate law should be removed.
+ */
+/datum/ai_laws/proc/remove_supplied_law(law)
+	if(!law)
 		return
-	suppliedstate[index] = FALSE
+	var/index = supplied.Find(law)
+	if(!index)
+		return
+	remove_supplied_law_by_index(index)
 
+/// Removes a supplied law by its index.
+/datum/ai_laws/proc/remove_supplied_law_by_index(index)
+	if(!index || isnull(supplied[index]))
+		return
+	if(!isnull(supplied_state[index]))
+		supplied_state[index] = null
+	supplied[index] = ""
+	while(supplied[length(supplied)] == "")
+		supplied[length(supplied)] = null
+	while(supplied_state[length(supplied_state)] < index)
+		supplied_state[length(supplied_state)] = null
 
+/**
+ * Edits a supplied law.
+ *
+ * Because supplied laws may be duplicates, it will only edit the first matching law. Use [/proc/edit_supplied_law_by_index] if a specific duplicate law should be edited.
+ */
 
+/datum/ai_laws/proc/edit_supplied_law(law, new_law)
+	if(!law || !new_law || law == new_law)
+		return
+	var/index = supplied.Find(law)
+	if(!index)
+		return
+	edit_supplied_law_by_index(index, new_law)
 
-
-
-
-
-
-
-
-
+/// Edits a supplied law by its index.
+/datum/ai_laws/proc/edit_supplied_law_by_index(index, new_law)
+	if(!index || !new_law)
+		return
+	if(isnull(supplied[index]) || supplied[index] == new_law)
+		return
+	supplied[index] = new_law
 
 /**
  * Gets the number of how many laws this AI has.
@@ -424,89 +442,6 @@ GLOBAL_VAR(round_default_lawset)
 			if(length(law) > 0)
 				law_amount++
 	return law_amount
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/// Adds the passed law as an inherent law.
-/// Simply adds it to the bottom of the inherent law list.
-/// No duplicate laws allowed.
-/datum/ai_laws/proc/add_inherent_law(law)
-	inherent |= law
-
-/// Removes the passed law from the inherent law list.
-/datum/ai_laws/proc/remove_inherent_law(law)
-	inherent -= law
-
-/// Clears all inherent laws from this lawset.
-/datum/ai_laws/proc/clear_inherent_laws()
-	inherent.Cut()
-
-/// Adds the passed law as an ion law.
-/datum/ai_laws/proc/add_ion_law(law)
-	ion += law
-
-/// Removes the passed law from the ion law list.
-/datum/ai_laws/proc/remove_ion_law(law)
-	ion -= law
-
-/// Clears all ion laws.
-/datum/ai_laws/proc/clear_ion_laws()
-	ion.Cut()
-
-/// Adds the passed law as an hacked law.
-/datum/ai_laws/proc/add_hacked_law(law)
-	hacked += law
-
-/// Removes the passed law from the hacked law list.
-/datum/ai_laws/proc/remove_hacked_law(law)
-	hacked -= law
-
-/// Clears all hacked laws.
-/datum/ai_laws/proc/clear_hacked_laws()
-	hacked.Cut()
-
-/// Adds the passed law as a supplied law at the passed priority level.
-/// Will override any existing supplied laws at that priority level.
-/datum/ai_laws/proc/add_supplied_law(number, law)
-	while (supplied.len < number + 1)
-		supplied += ""
-
-	supplied[number + 1] = law
-
-/// Removes the supplied law at the passed number.
-/datum/ai_laws/proc/remove_supplied_law_by_num(number)
-	supplied[number] = ""
-
-/// Removes the supplied law by law text, replacing it with a blank.
-/datum/ai_laws/proc/remove_supplied_law_by_law(law)
-	var/lawindex = supplied.Find(law)
-	if(!lawindex)
-		return
-
-	supplied[lawindex] = ""
-
-/// Clears all supplied laws.
-/datum/ai_laws/proc/clear_supplied_laws()
-	supplied.Cut()
 
 /**
  * Removes the law at the passed index of both inherent and supplied laws combined.

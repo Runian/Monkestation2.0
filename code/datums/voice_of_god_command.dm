@@ -316,7 +316,7 @@ GLOBAL_LIST_INIT(voice_of_god_commands, init_voice_of_god_commands())
 /datum/voice_of_god_command/state_laws/execute(list/listeners, mob/living/user, power_multiplier = 1, message)
 	var/iteration = 0
 	for(var/mob/living/silicon/target in listeners)
-		addtimer(CALLBACK(target, TYPE_PROC_REF(/mob/living/silicon, statelaws), TRUE), (3 SECONDS * iteration) + 0.5 SECONDS)
+		addtimer(CALLBACK(target, TYPE_PROC_REF(/mob/living/silicon, state_laws), TRUE), (3 SECONDS * iteration) + 0.5 SECONDS)
 		iteration++
 
 /// This command forces the listeners to take step in a direction chosen by the user, otherwise a random cardinal one.

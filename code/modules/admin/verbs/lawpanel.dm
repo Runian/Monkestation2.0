@@ -123,7 +123,7 @@ ADMIN_VERB(law_panel, R_ADMIN, FALSE, "Law Panel", "View the AI laws.", ADMIN_CA
 
 	// If it's far beyond any existing values, just re-add it normally
 	if(new_prio > length(borgo.laws.supplied))
-		borgo.laws.remove_supplied_law_by_num(old_prio)
+		borgo.laws.remove_supplied_law_by_index(old_prio)
 		borgo.laws.add_supplied_law(new_prio, law)
 		return TRUE
 
@@ -147,14 +147,14 @@ ADMIN_VERB(law_panel, R_ADMIN, FALSE, "Law Panel", "View the AI laws.", ADMIN_CA
 			borgo.laws.supplied.Swap(old_prio, new_prio)
 			return TRUE
 		if(swap_or_remove == "Replace")
-			borgo.laws.remove_supplied_law_by_num(new_prio, law)
+			borgo.laws.remove_supplied_law_by_index(new_prio, law)
 			borgo.laws.add_supplied_law(new_prio, law)
 			return TRUE
 
 		var/new_prio_for_old_law = new_prio + (swap_or_remove == "Move up" ? 1 : -1)
 
-		borgo.laws.remove_supplied_law_by_num(old_prio)
-		borgo.laws.remove_supplied_law_by_num(new_prio)
+		borgo.laws.remove_supplied_law_by_index(old_prio)
+		borgo.laws.remove_supplied_law_by_index(new_prio)
 		borgo.laws.add_supplied_law(new_prio, law)
 		borgo.laws.add_supplied_law(new_prio_for_old_law, existing_law)
 		return TRUE
@@ -165,7 +165,7 @@ ADMIN_VERB(law_panel, R_ADMIN, FALSE, "Law Panel", "View the AI laws.", ADMIN_CA
 		return FALSE
 
 	// At this point the slot is free, insert it as normal
-	borgo.laws.remove_supplied_law_by_num(old_prio)
+	borgo.laws.remove_supplied_law_by_index(old_prio)
 	borgo.laws.add_supplied_law(new_prio, law)
 	return TRUE
 
@@ -174,7 +174,7 @@ ADMIN_VERB(law_panel, R_ADMIN, FALSE, "Law Panel", "View the AI laws.", ADMIN_CA
 		if(LAW_INHERENT)
 			borgo.laws.remove_inherent_law(law)
 		if(LAW_SUPPLIED)
-			borgo.laws.remove_supplied_law_by_law(law)
+			borgo.laws.remove_supplied_law(law)
 		if(LAW_HACKED)
 			borgo.laws.remove_hacked_law(law)
 		if(LAW_ION)
@@ -209,7 +209,7 @@ ADMIN_VERB(law_panel, R_ADMIN, FALSE, "Law Panel", "View the AI laws.", ADMIN_CA
 			return FALSE
 
 		if("force_state_laws")
-			borgo.statelaws()
+			borgo.state_laws()
 			return FALSE
 
 		if("announce_law_changes")
