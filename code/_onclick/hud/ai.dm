@@ -111,7 +111,7 @@
 	AI.ai_call_shuttle()
 
 /atom/movable/screen/ai/state_laws
-	name = "State Laws"
+	name = "Law Manager"
 	icon_state = "state_laws"
 
 /atom/movable/screen/ai/state_laws/Click()
