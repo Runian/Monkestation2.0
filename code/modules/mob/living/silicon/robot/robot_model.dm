@@ -795,6 +795,13 @@
 	model_traits = list(TRAIT_PUSHIMMUNE)
 	hat_offset = -2
 	badge_offset = -2
+	borg_skins = list(
+		"Standard" = list(SKIN_ICON_STATE = "peace"),
+		"Whitespider" = list(
+			SKIN_ICON_STATE = "whitespider",
+			SKIN_LIGHT_KEY = NONE,
+		),
+	)
 
 /obj/item/robot_model/peacekeeper/do_transform_animation()
 	..()
