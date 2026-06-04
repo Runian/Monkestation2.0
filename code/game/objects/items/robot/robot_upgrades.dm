@@ -15,6 +15,8 @@
 	var/list/items_to_add
 	/// List of items to remove with the module, if any.
 	var/list/items_to_remove
+	/// If the cyborg has any of these upgrades, they cannot install this upgrade.
+	var/list/blacklisted_upgrades = null
 	/// If true, requires the cyborg to have chosen a module.
 	var/require_model = FALSE
 	/// If true, will be deleted after usage and will not be stored in the cyborg.
@@ -34,6 +36,13 @@
 		to_chat(borg, span_alert("Upgrade mounting error! Hardpoint already occupied!"))
 		to_chat(user, span_warning("The mounting point for the module is already occupied!"))
 		return FALSE
+	if(blacklisted_upgrades)
+		for(var/obj/item/borg/upgrade/upgrade_typepath as anything in blacklisted_upgrades)
+			var/obj/item/borg/upgrade/existing_upgrade = locate(upgrade_typepath) in borg.upgrades
+			if(existing_upgrade)
+				to_chat(borg, "Upgrade error! Upgrade conflicts with [existing_upgrade.name]!")
+				to_chat(user, "This upgrade is incompatible with [existing_upgrade.name]!")
+				return FALSE
 	// Handles adding/removing items.
 	if(length(items_to_add))
 		install_items(borg, user, items_to_add)
@@ -829,32 +838,68 @@
 	for(var/obj/item/healthanalyzer/cyborg/analyzer in borg.model.modules)
 		analyzer.downgrade()
 
+// This is a base item which should be inherited from.
 /obj/item/borg/upgrade/surgery_omnitool
 	name = "cyborg surgical omni-tool upgrade"
-	desc = "An upgrade to the Medical model, upgrading the built-in \
-		surgical omnitool, to be on par with advanced surgical tools, allowing for faster surgery."
+	desc = "An upgrade that upgrades the standard built-in surgical omnitool to be on par with advanced surgical tools which allows for faster surgery."
 	icon_state = "module_medical"
 	require_model = TRUE
 	model_type = list(/obj/item/robot_model/medical, /obj/item/robot_model/syndicate_medical)
 	model_flags = BORG_MODEL_MEDICAL
 
-/obj/item/borg/upgrade/surgery_omnitool/action(mob/living/silicon/robot/cyborg, mob/living/user = usr)
+/obj/item/borg/upgrade/surgery_omnitool/action(mob/living/silicon/robot/borg, user = usr)
 	. = ..()
 	if(!.)
-		return .
-	for(var/obj/item/borg/cyborg_omnitool/medical/omnitool_upgrade in cyborg.model.modules)
-		if(omnitool_upgrade.upgraded)
-			to_chat(user, span_warning("This unit is already equipped with an omnitool upgrade!"))
-			return FALSE
-	for(var/obj/item/borg/cyborg_omnitool/medical/omnitool in cyborg.model.modules)
+		return FALSE
+	for(var/obj/item/borg/upgrade/surgery_omnitool/other_omnitool_upgrade in borg.upgrades) // Drop all other omnitool related upgrades.
+		other_omnitool_upgrade.forceMove(get_turf(borg))
+
+/obj/item/borg/upgrade/surgery_omnitool/advanced
+	blacklisted_upgrades = list(
+		/obj/item/borg/upgrade/surgery_omnitool/alien
+	)
+
+/obj/item/borg/upgrade/surgery_omnitool/advanced/action(mob/living/silicon/robot/borg, user = usr)
+	. = ..()
+	if(!.)
+		return FALSE
+	for(var/obj/item/borg/cyborg_omnitool/medical/omnitool in borg.model.modules)
+		if(!omnitool.upgraded)
+			continue
+		to_chat(user, span_warning("This cyborg has already been equipped with an omnitool upgrade!"))
+		return FALSE
+	for(var/obj/item/borg/cyborg_omnitool/medical/omnitool in borg.model.modules)
 		omnitool.set_upgraded(TRUE)
 
-/obj/item/borg/upgrade/surgery_omnitool/deactivate(mob/living/silicon/robot/cyborg, mob/living/user = usr)
+/obj/item/borg/upgrade/surgery_omnitool/advanced/deactivate(mob/living/silicon/robot/borg, mob/living/user = usr)
 	. = ..()
 	if(!.)
 		return .
-	for(var/obj/item/borg/cyborg_omnitool/omnitool in cyborg.model.modules)
+	for(var/obj/item/borg/cyborg_omnitool/medical/omnitool in borg.model.modules)
 		omnitool.set_upgraded(FALSE)
+
+/obj/item/borg/upgrade/surgery_omnitool/alien
+	name = "cyborg surgical alien omni-tool upgrade"
+	desc = "An upgrade that replaces the standard built-in surgical omnitool with an alien built-in surgical omnitool which allows for even faster surgery."
+
+/obj/item/borg/upgrade/surgery_omnitool/alien/action(mob/living/silicon/robot/borg, mob/living/user = usr)
+	. = ..()
+	if(!.)
+		return FALSE
+
+	var/obj/item/borg/cyborg_omnitool/medical/replacable_omnitool = locate() in borg.model.modules
+	if(isnull(replacable_omnitool))
+		to_chat(user, span_warning("This cyborg doesn't have a surgical omni-toolset to replace!"))
+		return FALSE
+
+	var/obj/item/borg/upgrade/surgery_omnitool/downgraded_upgrade = locate() in borg.upgrades
+	if(downgraded_upgrade)
+		downgraded_upgrade.forceMove(get_turf(borg))
+
+	for(var/obj/item/borg/cyborg_omnitool/medical/found_omnitool in borg.model.modules)
+		install_items(borg, user, list(/obj/item/borg/cyborg_omnitool/medical/alien))
+		remove_items(borg, user, list(/obj/item/borg/cyborg_omnitool/medical))
+	return TRUE
 
 //
 // Science Cyborgs

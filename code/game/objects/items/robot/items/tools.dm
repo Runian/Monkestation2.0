@@ -170,7 +170,7 @@
 	name = "cyborg omni-toolset"
 	desc = "You shouldn't see this in-game normally."
 	icon = 'icons/mob/silicon/robot_items.dmi'
-	icon_state = "toolkit_medborg"
+	icon_state = "toolkit_mediborg"
 	/// Our tools (list of item typepaths).
 	var/list/obj/item/omni_toolkit = list()
 	/// Map of solid objects internally used by the omni-tool.
@@ -326,6 +326,18 @@
 
 /obj/item/borg/cyborg_omnitool/medical/upgraded
 	upgraded = TRUE
+
+/obj/item/borg/cyborg_omnitool/medical/alien
+	omni_toolkit = list(
+		/obj/item/surgical_drapes/cyborg,
+		/obj/item/scalpel/cyborg/alien,
+		/obj/item/surgicaldrill/cyborg/alien,
+		/obj/item/hemostat/cyborg/alien,
+		/obj/item/retractor/cyborg/alien,
+		/obj/item/cautery/cyborg/alien,
+		/obj/item/circular_saw/cyborg/alien,
+		/obj/item/bonesetter/cyborg/alien,
+	)
 
 // Toolset for engineering cyborgs. This is all of the tools except for the welding tool since it's quite hard to implement (read: can't be arsed to).
 /obj/item/borg/cyborg_omnitool/engineering
