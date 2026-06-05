@@ -871,7 +871,7 @@
 	for(var/obj/item/borg/cyborg_omnitool/medical/omnitool in borg.model.modules)
 		omnitool.set_upgraded(TRUE)
 
-/obj/item/borg/upgrade/surgery_omnitool/advanced/deactivate(mob/living/silicon/robot/borg, mob/living/user = usr)
+/obj/item/borg/upgrade/surgery_omnitool/advanced/deactivate(mob/living/silicon/robot/borg, user = usr)
 	. = ..()
 	if(!.)
 		return .
@@ -880,9 +880,9 @@
 
 /obj/item/borg/upgrade/surgery_omnitool/alien
 	name = "cyborg surgical alien omni-tool upgrade"
-	desc = "An upgrade that replaces the standard built-in surgical omnitool with an alien built-in surgical omnitool which allows for even faster surgery."
+	desc = "An upgrade that replaces the standard built-in surgical omnitool with an alien variant of it which allows for even faster surgery."
 
-/obj/item/borg/upgrade/surgery_omnitool/alien/action(mob/living/silicon/robot/borg, mob/living/user = usr)
+/obj/item/borg/upgrade/surgery_omnitool/alien/action(mob/living/silicon/robot/borg, user = usr)
 	. = ..()
 	if(!.)
 		return FALSE
@@ -900,6 +900,62 @@
 		install_items(borg, user, list(/obj/item/borg/cyborg_omnitool/medical/alien))
 		remove_items(borg, user, list(/obj/item/borg/cyborg_omnitool/medical))
 	return TRUE
+
+/obj/item/borg/upgrade/surgery_omnitool/alien/deactivate(mob/living/silicon/robot/borg, user = usr)
+	. = ..()
+	if(!.)
+		return .
+	for(var/obj/item/borg/cyborg_omnitool/medical/found_omnitool in borg.model.modules)
+		remove_items(borg, user, list(/obj/item/borg/cyborg_omnitool/medical/alien))
+		install_items(borg, user, list(/obj/item/borg/cyborg_omnitool/medical))
+
+// This is a base item which should be inherited from.
+/obj/item/borg/upgrade/syringe
+	name = "cyborg syringe upgrade"
+	desc = "An upgrade that replaces the standard built-in syringe."
+	icon_state = "module_medical"
+	require_model = TRUE
+	model_type = list(/obj/item/robot_model/medical, /obj/item/robot_model/syndicate_medical)
+	model_flags = BORG_MODEL_MEDICAL
+	/// The old syringe.
+	var/obj/item/reagent_containers/syringe/old_syringe_to_remove = /obj/item/reagent_containers/syringe
+	/// The new syringe.
+	var/obj/item/reagent_containers/syringe/new_syringe_to_give = null
+
+/obj/item/borg/upgrade/syringe/action(mob/living/silicon/robot/borg, user = usr)
+	. = ..()
+	if(!.)
+		return FALSE
+	if(!old_syringe_to_remove || !new_syringe_to_give)
+		to_chat(user, span_warning("This upgrade doesn't seem to do anything."))
+		return FALSE
+	if(!(locate(/obj/item/reagent_containers/syringe) in borg.model.modules))
+		to_chat(user, span_warning("This cyborg doesn't have a syringe to upgrade!"))
+		return FALSE
+	var/datum/reagents/held_reagents = new(10000) // Temporarily storing the reagent to transfer it to the new syringe.
+	for(var/obj/item/reagent_containers/syringe/syringe_module in borg.model.modules)
+		syringe_module.reagents.trans_to(held_reagents, syringe_module.reagents.maximum_volume, no_react = TRUE)
+	for(var/obj/item/borg/upgrade/syringe/other_syringe_upgrade in borg.upgrades) // Drop all other syringe related upgrades.
+		other_syringe_upgrade.forceMove(get_turf(borg))
+
+	remove_items(borg, user, list(old_syringe_to_remove))
+	install_items(borg, user, list(new_syringe_to_give))
+
+	var/obj/item/reagent_containers/syringe/new_syringe = locate(new_syringe_to_give) in borg.model.modules
+	held_reagents.trans_to(new_syringe, new_syringe.reagents.maximum_volume)
+	if(held_reagents.total_volume)
+		var/turf/current_turf = borg.loc
+		current_turf.add_liquid_from_reagents(held_reagents, FALSE, reagents.chem_temp)
+
+/obj/item/borg/upgrade/syringe/piercing
+	name = "cyborg piercing syringe upgrade"
+	desc = "An upgrade that replaces the standard built-in syringe with a syringe that can pierce thick material."
+	new_syringe_to_give = /obj/item/reagent_containers/syringe/piercing
+
+/obj/item/borg/upgrade/syringe/bluespace
+	name = "cyborg bluespace syringe upgrade"
+	desc = "An upgrade that replaces the standard built-in syringe with a syringe that can hold more reagents."
+	new_syringe_to_give = /obj/item/reagent_containers/syringe/bluespace
 
 //
 // Science Cyborgs
