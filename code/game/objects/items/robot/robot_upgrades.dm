@@ -45,9 +45,11 @@
 				return FALSE
 	// Handles adding/removing items.
 	if(length(items_to_add))
-		install_items(borg, user, items_to_add)
+		for(var/item_to_add in items_to_add)
+			install_item_by_typepath(borg, user, item_to_add)
 	if(length(items_to_remove))
-		remove_items(borg, user, items_to_remove)
+		for(var/item_to_remove in items_to_remove)
+			remove_item_by_typepath(borg, user, item_to_remove)
 	return TRUE
 
 /obj/item/borg/upgrade/proc/deactivate(mob/living/silicon/robot/borg, user = usr)
@@ -55,25 +57,33 @@
 		return FALSE
 	// Handles reverting the items back.
 	if(length(items_to_add))
-		remove_items(borg, user, items_to_add)
+		for(var/item_to_remove in items_to_add)
+			remove_item_by_typepath(borg, user, item_to_remove)
 	if(length(items_to_remove))
-		install_items(borg, user, items_to_remove)
+		for(var/item_to_add in items_to_remove)
+			install_item_by_typepath(borg, user, item_to_add)
 	return TRUE
 
-/// Handles adding items with the module.
-/obj/item/borg/upgrade/proc/install_items(mob/living/silicon/robot/borg, mob/living/user = usr, list/items)
-	for(var/item_to_add in items)
-		var/obj/item/module_item = new item_to_add(borg.model)
-		borg.model.basic_modules += module_item
-		borg.model.add_module(module_item, FALSE, TRUE)
+/// Creates and adds an item by its typepath
+/obj/item/borg/upgrade/proc/install_item_by_typepath(mob/living/silicon/robot/borg, user = usr, obj/item/typepath_to_add)
+	var/obj/item/module_item = new typepath_to_add(borg.model)
+	borg.model.basic_modules += module_item
+	borg.model.add_module(module_item, FALSE, TRUE)
+	return module_item
+
+/// Creates an item from a typepath and adds it to the available modules.
+/obj/item/borg/upgrade/proc/remove_item_by_typepath(mob/living/silicon/robot/borg, user = usr, obj/item/typepath_to_remove)
+	var/obj/item/module_item = locate(typepath_to_remove) in borg.model.modules
+	if(!module_item)
+		return FALSE
+	borg.model.remove_module(module_item)
 	return TRUE
 
-/// Handles removing items with the module.
-/obj/item/borg/upgrade/proc/remove_items(mob/living/silicon/robot/borg, mob/living/user = usr, list/items)
-	for(var/item_to_remove in items)
-		var/obj/item/module_item = locate(item_to_remove) in borg.model.modules
-		if(module_item)
-			borg.model.remove_module(module_item)
+/// Removes an item with the module if it is already.
+/obj/item/borg/upgrade/proc/remove_item(mob/living/silicon/robot/borg, user = usr, obj/item/item_to_remove)
+	if(!(item_to_remove in borg.model.modules))
+		return FALSE
+	borg.model.remove_module(item_to_remove)
 	return TRUE
 
 /obj/item/borg/upgrade/rename
@@ -612,41 +622,35 @@
 	. = ..()
 	if(!.)
 		return
-
 	var/obj/item/storage/part_replacer/cyborg/rped = locate() in borg.model.modules
 	if(isnull(rped))
 		to_chat(user, span_warning("This cyborg doesn't have a rapid part exchange device to upgrade!"))
 		return FALSE
-
-	install_items(borg, user, list(/obj/item/storage/part_replacer/bluespace))
-	var/obj/item/storage/part_replacer/bluespace/brped = locate() in borg.model.modules
+	var/obj/item/storage/part_replacer/bluespace/brped = install_item_by_typepath(borg, user, /obj/item/storage/part_replacer/bluespace)
 	var/move_location = borg.drop_location()
 	brped.atom_storage.silent_for_user = TRUE
 	for(var/obj/item in rped)
 		if(!brped.atom_storage.attempt_insert(item, borg, TRUE))
 			item.forceMove(move_location)
 	brped.atom_storage.silent_for_user = initial(brped.atom_storage.silent_for_user)
-	remove_items(borg, user, list(/obj/item/storage/part_replacer/cyborg))
+	remove_item(borg, user, rped)
 	return TRUE
 
 /obj/item/borg/upgrade/bs_rped/deactivate(mob/living/silicon/robot/borg, mob/living/user = usr)
 	. = ..()
 	if(!.)
 		return
-
 	var/obj/item/storage/part_replacer/bluespace/brped = locate() in borg.model.modules
 	if(isnull(brped))
 		return FALSE
-
-	install_items(borg, user, list(/obj/item/storage/part_replacer/cyborg))
-	var/obj/item/storage/part_replacer/cyborg/rped = locate() in borg.model.modules
+	var/obj/item/storage/part_replacer/cyborg/rped = install_item_by_typepath(borg, user, /obj/item/storage/part_replacer/cyborg)
 	var/move_location = borg.drop_location()
 	rped.atom_storage.silent_for_user = TRUE
 	for(var/obj/item in brped)
 		if(!rped.atom_storage.attempt_insert(item, borg, TRUE))
 			item.forceMove(move_location)
 	rped.atom_storage.silent_for_user = initial(rped.atom_storage.silent_for_user)
-	remove_items(borg, user, list(/obj/item/storage/part_replacer/bluespace))
+	remove_item(borg, user, brped)
 	return TRUE
 
 /obj/item/borg/upgrade/pinpointer
@@ -886,19 +890,16 @@
 	. = ..()
 	if(!.)
 		return FALSE
-
 	var/obj/item/borg/cyborg_omnitool/medical/replacable_omnitool = locate() in borg.model.modules
 	if(isnull(replacable_omnitool))
 		to_chat(user, span_warning("This cyborg doesn't have a surgical omni-toolset to replace!"))
 		return FALSE
-
 	var/obj/item/borg/upgrade/surgery_omnitool/downgraded_upgrade = locate() in borg.upgrades
 	if(downgraded_upgrade)
 		downgraded_upgrade.forceMove(get_turf(borg))
-
 	for(var/obj/item/borg/cyborg_omnitool/medical/found_omnitool in borg.model.modules)
-		install_items(borg, user, list(/obj/item/borg/cyborg_omnitool/medical/alien))
-		remove_items(borg, user, list(/obj/item/borg/cyborg_omnitool/medical))
+		install_item_by_typepath(borg, user, /obj/item/borg/cyborg_omnitool/medical/alien)
+		remove_item(borg, user, found_omnitool)
 	return TRUE
 
 /obj/item/borg/upgrade/surgery_omnitool/alien/deactivate(mob/living/silicon/robot/borg, user = usr)
@@ -906,8 +907,8 @@
 	if(!.)
 		return .
 	for(var/obj/item/borg/cyborg_omnitool/medical/found_omnitool in borg.model.modules)
-		remove_items(borg, user, list(/obj/item/borg/cyborg_omnitool/medical/alien))
-		install_items(borg, user, list(/obj/item/borg/cyborg_omnitool/medical))
+		install_item_by_typepath(borg, user, list(/obj/item/borg/cyborg_omnitool/medical))
+		remove_item(borg, user, found_omnitool)
 
 // This is a base item which should be inherited from.
 /obj/item/borg/upgrade/syringe
@@ -917,45 +918,43 @@
 	require_model = TRUE
 	model_type = list(/obj/item/robot_model/medical, /obj/item/robot_model/syndicate_medical)
 	model_flags = BORG_MODEL_MEDICAL
-	/// The old syringe.
-	var/obj/item/reagent_containers/syringe/old_syringe_to_remove = /obj/item/reagent_containers/syringe
-	/// The new syringe.
-	var/obj/item/reagent_containers/syringe/new_syringe_to_give = null
+	/// The typepath of the new syringe to give.
+	var/obj/item/reagent_containers/syringe/new_syringe_typepath = null
 
 /obj/item/borg/upgrade/syringe/action(mob/living/silicon/robot/borg, user = usr)
 	. = ..()
 	if(!.)
 		return FALSE
-	if(!old_syringe_to_remove || !new_syringe_to_give)
+	if(!new_syringe_typepath)
 		to_chat(user, span_warning("This upgrade doesn't seem to do anything."))
 		return FALSE
-	if(!(locate(/obj/item/reagent_containers/syringe) in borg.model.modules))
-		to_chat(user, span_warning("This cyborg doesn't have a syringe to upgrade!"))
-		return FALSE
-	var/datum/reagents/held_reagents = new(10000) // Temporarily storing the reagent to transfer it to the new syringe.
-	for(var/obj/item/reagent_containers/syringe/syringe_module in borg.model.modules)
-		syringe_module.reagents.trans_to(held_reagents, syringe_module.reagents.maximum_volume, no_react = TRUE)
 	for(var/obj/item/borg/upgrade/syringe/other_syringe_upgrade in borg.upgrades) // Drop all other syringe related upgrades.
 		other_syringe_upgrade.forceMove(get_turf(borg))
+	for(var/obj/item/reagent_containers/syringe/old_syringe in borg.model.modules)
+		var/obj/item/reagent_containers/syringe/new_syringe = install_item_by_typepath(borg, user, new_syringe_typepath)
+		old_syringe.reagents.trans_to(new_syringe, new_syringe.reagents.maximum_volume)
+		old_syringe.SplashReagents(get_turf(borg), override_spillable = TRUE)
+		remove_item(borg, user, old_syringe)
 
-	remove_items(borg, user, list(old_syringe_to_remove))
-	install_items(borg, user, list(new_syringe_to_give))
-
-	var/obj/item/reagent_containers/syringe/new_syringe = locate(new_syringe_to_give) in borg.model.modules
-	held_reagents.trans_to(new_syringe, new_syringe.reagents.maximum_volume)
-	if(held_reagents.total_volume)
-		var/turf/current_turf = borg.loc
-		current_turf.add_liquid_from_reagents(held_reagents, FALSE, reagents.chem_temp)
+/obj/item/borg/upgrade/syringe/deactivate(mob/living/silicon/robot/borg, user = usr)
+	. = ..()
+	if(!.)
+		return FALSE
+	for(var/obj/item/reagent_containers/syringe/new_syringe in borg.model.modules)
+		var/obj/item/reagent_containers/syringe/old_syringe = install_item_by_typepath(borg, user, /obj/item/reagent_containers/syringe)
+		new_syringe.reagents.trans_to(old_syringe, new_syringe.reagents.maximum_volume)
+		new_syringe.SplashReagents(get_turf(borg), override_spillable = TRUE)
+		remove_item(borg, user, new_syringe)
 
 /obj/item/borg/upgrade/syringe/piercing
 	name = "cyborg piercing syringe upgrade"
 	desc = "An upgrade that replaces the standard built-in syringe with a syringe that can pierce thick material."
-	new_syringe_to_give = /obj/item/reagent_containers/syringe/piercing
+	new_syringe_typepath = /obj/item/reagent_containers/syringe/piercing
 
 /obj/item/borg/upgrade/syringe/bluespace
 	name = "cyborg bluespace syringe upgrade"
 	desc = "An upgrade that replaces the standard built-in syringe with a syringe that can hold more reagents."
-	new_syringe_to_give = /obj/item/reagent_containers/syringe/bluespace
+	new_syringe_typepath = /obj/item/reagent_containers/syringe/bluespace
 
 //
 // Science Cyborgs
