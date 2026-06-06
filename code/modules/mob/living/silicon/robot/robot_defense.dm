@@ -81,10 +81,10 @@ GLOBAL_LIST_INIT(blacklisted_borg_hats, typecacheof(list( //Hats that don't real
 		if(D.cell)
 			to_chat(user, span_warning("You cannot connect the defibrillator to the cyborg power supply with the defibrillator's cell in the way!"))
 			return
-		if(locate(/obj/item/borg/upgrade/defib) in src || locate(/obj/item/borg/upgrade/defib/backpack) in src)
+		if(locate(/obj/item/borg/upgrade/defibrillator) in src || locate(/obj/item/borg/upgrade/defibrillator/backpack) in src)
 			to_chat(user, span_warning("[src] already has a defibrillator!"))
 			return
-		var/obj/item/borg/upgrade/defib/backpack/B = new(null, D)
+		var/obj/item/borg/upgrade/defibrillator/backpack/B = new(null, D)
 		add_to_upgrades(B, user)
 		return
 
