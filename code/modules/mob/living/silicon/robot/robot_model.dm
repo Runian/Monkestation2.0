@@ -117,6 +117,9 @@
 	return added_module
 
 /obj/item/robot_model/proc/remove_module(obj/item/removed_module)
+	var/mob/living/silicon/robot/cyborg = loc
+	if(removed_module == cyborg.module_active)
+		cyborg.uneq_active()
 	basic_modules -= removed_module
 	modules -= removed_module
 	emag_modules -= removed_module
