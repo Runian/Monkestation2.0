@@ -471,6 +471,51 @@
 	model_flags = BORG_MODEL_MINER
 	traits_to_add = list(TRAIT_LAVA_IMMUNE, TRAIT_SNOWSTORM_IMMUNE)
 
+/obj/item/borg/upgrade/jump_thrusters
+	name = "mining cyborg jump thrusters"
+	desc = "An upgrade that tweaks a cyborg's built-in propulsion system to allow short burst of rapid forward movement on demand."
+	icon_state = "module_miner"
+	require_model = TRUE
+	model_type = list(/obj/item/robot_model/miner)
+	model_flags = BORG_MODEL_MINER
+	/// Action that launches them forward.
+	var/datum/action/thrusters_action
+	/// The cooldown of the thruster action.
+	COOLDOWN_DECLARE(thrusters_cooldown)
+
+/obj/item/borg/upgrade/jump_thrusters/action(mob/living/silicon/robot/borg, user = usr)
+	. = ..()
+	if(!.)
+		return .
+	thrusters_action = new /datum/action/item_action/cyborg_jump_thrusters(src)
+	thrusters_action.Grant(borg)
+
+/obj/item/borg/upgrade/jump_thrusters/deactivate(mob/living/silicon/robot/borg, user = usr)
+	. = ..()
+	if(!.)
+		return .
+	thrusters_action.Remove(borg)
+	QDEL_NULL(thrusters_action)
+
+/obj/item/borg/upgrade/jump_thrusters/ui_action_click(mob/user, actiontype)
+	if(!COOLDOWN_FINISHED(src, thrusters_cooldown))
+		to_chat(user, span_warning("Your internal propulsion is still recharging!"))
+		return
+	var/atom/target = get_edge_target_turf(user, user.dir)
+	ADD_TRAIT(user, TRAIT_MOVE_FLOATING, LEAPING_TRAIT)
+	if(!user.throw_at(target, jumpdistance, jumpspeed, spin = FALSE, diagonals_first = TRUE, callback = TRAIT_CALLBACK_REMOVE(user, TRAIT_MOVE_FLOATING, LEAPING_TRAIT)))
+		to_chat(user, span_warning("Something prevents you from dashing forward!"))
+		return
+	playsound(src, 'sound/effects/stealthoff.ogg', 50, TRUE, TRUE)
+	user.visible_message(span_warning("[user] dashes forward into the air!"))
+	COOLDOWN_START(src, thrusters_cooldown, 6 SECONDS)
+
+/datum/action/item_action/cyborg_jump_thrusters
+	name = "Activate Jump Thrusters"
+	desc = "Activates your jump thrusters to rapidly dash forward."
+	button_icon = 'icons/mob/actions/actions_items.dmi'
+	button_icon_state = "jetboot"
+
 //
 // Janitor-Adjacent Cyborg Upgrades
 //
