@@ -129,7 +129,7 @@
 	desc = "An energy-operated thruster system for cyborgs."
 	icon_state = "module_general"
 
-/obj/item/borg/upgrade/thrusters/action(mob/living/silicon/robot/borg, mob/living/user = usr)
+/obj/item/borg/upgrade/thrusters/action(mob/living/silicon/robot/borg, user = usr)
 	. = ..()
 	if(!.)
 		return .
@@ -139,7 +139,7 @@
 	borg.ionpulse = TRUE
 	borg.toggle_ionpulse() // Enabled by default.
 
-/obj/item/borg/upgrade/thrusters/deactivate(mob/living/silicon/robot/borg, mob/living/user = usr)
+/obj/item/borg/upgrade/thrusters/deactivate(mob/living/silicon/robot/borg, user = usr)
 	. = ..()
 	if(!.)
 		return .
@@ -163,7 +163,7 @@
 	/// The cooldown between repairs.
 	COOLDOWN_DECLARE(next_repair)
 
-/obj/item/borg/upgrade/selfrepair/action(mob/living/silicon/robot/borg, mob/living/user = usr)
+/obj/item/borg/upgrade/selfrepair/action(mob/living/silicon/robot/borg, user = usr)
 	. = ..()
 	if(!.)
 		return FALSE
@@ -171,7 +171,7 @@
 	toggle_action = new /datum/action/item_action/toggle(src)
 	toggle_action.Grant(borg)
 
-/obj/item/borg/upgrade/selfrepair/deactivate(mob/living/silicon/robot/borg, mob/living/user = usr)
+/obj/item/borg/upgrade/selfrepair/deactivate(mob/living/silicon/robot/borg, user = usr)
 	. = ..()
 	if(!.)
 		return FALSE
@@ -592,14 +592,14 @@
 	model_flags = BORG_MODEL_MEDICAL
 	var/list/additional_reagents = list()
 
-/obj/item/borg/upgrade/hypospray/action(mob/living/silicon/robot/borg, mob/living/user = usr)
+/obj/item/borg/upgrade/hypospray/action(mob/living/silicon/robot/borg, user = usr)
 	. = ..()
 	if(!.)
 		return .
 	for(var/obj/item/reagent_containers/borghypo/hypo in borg.model.modules)
 		hypo.upgrade()
 
-/obj/item/borg/upgrade/hypospray/deactivate(mob/living/silicon/robot/borg, mob/living/user = usr)
+/obj/item/borg/upgrade/hypospray/deactivate(mob/living/silicon/robot/borg, user = usr)
 	. = ..()
 	if(!.)
 		return .
@@ -617,7 +617,7 @@
 		pierce armor and thick material."
 	icon_state = "module_medical"
 
-/obj/item/borg/upgrade/piercing_hypospray/action(mob/living/silicon/robot/borg, mob/living/user = usr)
+/obj/item/borg/upgrade/piercing_hypospray/action(mob/living/silicon/robot/borg, user = usr)
 	. = ..()
 	if(!.)
 		return .
@@ -632,7 +632,7 @@
 	for(var/obj/item/reagent_containers/borghypo/hypo in borg.model.emag_modules)
 		hypo.bypass_protection = TRUE
 
-/obj/item/borg/upgrade/piercing_hypospray/deactivate(mob/living/silicon/robot/borg, mob/living/user = usr)
+/obj/item/borg/upgrade/piercing_hypospray/deactivate(mob/living/silicon/robot/borg, user = usr)
 	. = ..()
 	if(!.)
 		return .
@@ -718,7 +718,7 @@
 	// List of surgeries that can be started.
 	var/list/loaded_surgeries = list()
 
-/obj/item/borg/upgrade/surgical_database/action(mob/living/silicon/robot/borg, mob/living/user = usr)
+/obj/item/borg/upgrade/surgical_database/action(mob/living/silicon/robot/borg, user = usr)
 	. = ..()
 	if(!.)
 		return .
@@ -727,7 +727,7 @@
 	database_scanner = new /datum/action/item_action/cyborg_surgical_database(src)
 	database_scanner.Grant(borg)
 
-/obj/item/borg/upgrade/surgical_database/deactivate(mob/living/silicon/robot/borg, mob/living/user = usr)
+/obj/item/borg/upgrade/surgical_database/deactivate(mob/living/silicon/robot/borg, user = usr)
 	. = ..()
 	if(!.)
 		return .
@@ -809,14 +809,14 @@
 	items_to_add = list(/obj/item/pinpointer/crew)
 	var/datum/action/crew_monitor
 
-/obj/item/borg/upgrade/pinpointer/action(mob/living/silicon/robot/borg, mob/living/user = usr)
+/obj/item/borg/upgrade/pinpointer/action(mob/living/silicon/robot/borg, user = usr)
 	. = ..()
 	if(!.)
 		return .
 	crew_monitor = new /datum/action/item_action/crew_monitor(src)
 	crew_monitor.Grant(borg)
 
-/obj/item/borg/upgrade/pinpointer/deactivate(mob/living/silicon/robot/borg, mob/living/user = usr)
+/obj/item/borg/upgrade/pinpointer/deactivate(mob/living/silicon/robot/borg, user = usr)
 	. = ..()
 	if(!.)
 		return .
@@ -1043,7 +1043,7 @@
 	/// Should anything be added as part of their science circuit apparatus?
 	var/list/storables_to_add = list()
 
-/obj/item/borg/upgrade/science_apparatus_improvement/action(mob/living/silicon/robot/borg, mob/living/user = usr)
+/obj/item/borg/upgrade/science_apparatus_improvement/action(mob/living/silicon/robot/borg, user = usr)
 	. = ..()
 	if(!.)
 		return FALSE
@@ -1053,7 +1053,7 @@
 		return FALSE
 	apparatus.storable |= storables_to_add
 
-/obj/item/borg/upgrade/science_apparatus_improvement/deactivate(mob/living/silicon/robot/borg, mob/living/user = usr)
+/obj/item/borg/upgrade/science_apparatus_improvement/deactivate(mob/living/silicon/robot/borg, user = usr)
 	. = ..()
 	if(!.)
 		return FALSE
