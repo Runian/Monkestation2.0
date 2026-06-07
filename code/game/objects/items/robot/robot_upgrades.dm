@@ -517,6 +517,19 @@
 	button_icon_state = "jetboot"
 
 //
+// Service-Adjacent Cyborg Upgrades
+//
+
+/obj/item/borg/upgrade/condiment_synthesizer
+	name = "Service Cyborg Condiment Synthesiser"
+	desc = "An upgrade to the service model cyborg, allowing it to produce solid condiments."
+	icon_state = "module_service"
+	require_model = TRUE
+	model_type = list(/obj/item/robot_model/service)
+	model_flags = BORG_MODEL_SERVICE
+	items_to_add = list(/obj/item/reagent_containers/borghypo/condiment_synthesizer)
+
+//
 // Janitor-Adjacent Cyborg Upgrades
 //
 
