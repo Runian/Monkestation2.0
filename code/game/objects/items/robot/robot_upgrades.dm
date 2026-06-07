@@ -486,14 +486,14 @@
 /obj/item/borg/upgrade/jump_thrusters/action(mob/living/silicon/robot/borg, user = usr)
 	. = ..()
 	if(!.)
-		return .
+		return FALSE
 	thrusters_action = new /datum/action/item_action/cyborg_jump_thrusters(src)
 	thrusters_action.Grant(borg)
 
 /obj/item/borg/upgrade/jump_thrusters/deactivate(mob/living/silicon/robot/borg, user = usr)
 	. = ..()
 	if(!.)
-		return .
+		return FALSE
 	thrusters_action.Remove(borg)
 	QDEL_NULL(thrusters_action)
 
@@ -503,11 +503,11 @@
 		return
 	var/atom/target = get_edge_target_turf(user, user.dir)
 	ADD_TRAIT(user, TRAIT_MOVE_FLOATING, LEAPING_TRAIT)
-	if(!user.throw_at(target, jumpdistance, jumpspeed, spin = FALSE, diagonals_first = TRUE, callback = TRAIT_CALLBACK_REMOVE(user, TRAIT_MOVE_FLOATING, LEAPING_TRAIT)))
-		to_chat(user, span_warning("Something prevents you from dashing forward!"))
+	if(!user.throw_at(target, 5, 3, spin = FALSE, diagonals_first = TRUE, callback = TRAIT_CALLBACK_REMOVE(user, TRAIT_MOVE_FLOATING, LEAPING_TRAIT)))
+		to_chat(user, span_warning("Something prevents you from thrusting forward!"))
 		return
 	playsound(src, 'sound/effects/stealthoff.ogg', 50, TRUE, TRUE)
-	user.visible_message(span_warning("[user] dashes forward into the air!"))
+	user.visible_message(span_warning("[user] thrusts forward into the air!"))
 	COOLDOWN_START(src, thrusters_cooldown, 6 SECONDS)
 
 /datum/action/item_action/cyborg_jump_thrusters
