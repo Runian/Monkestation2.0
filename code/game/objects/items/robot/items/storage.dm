@@ -3,7 +3,7 @@
 	desc = "This device seems nonfunctional."
 	icon = 'icons/mob/silicon/robot_items.dmi'
 	icon_state = "hugmodule"
-	/// The item stored inside of this apparatus
+	/// The item stored inside of this apparatus.
 	var/obj/item/stored
 	/// Whitelist of types (and its subtypes) that are allowed in this apparatus.
 	var/list/storable = list()
@@ -11,7 +11,10 @@
 	var/list/blacklisted_storables = list()
 
 /obj/item/borg/apparatus/Initialize(mapload)
-	RegisterSignal(loc.loc, COMSIG_BORG_SAFE_DECONSTRUCT, PROC_REF(safedecon))
+	var/mob/living/silicon/robot/cyborg_owner = loc.loc
+	if(!istype(cyborg_owner)) // This should only be available to cyborgs.
+		return INITIALIZE_HINT_QDEL
+	RegisterSignal(cyborg_owner, COMSIG_BORG_SAFE_DECONSTRUCT, PROC_REF(safe_deconstruction))
 	return ..()
 
 /obj/item/borg/apparatus/Destroy()
@@ -19,12 +22,12 @@
 	return ..()
 
 ///If we're safely deconstructed, we put the item neatly onto the ground, rather than deleting it.
-/obj/item/borg/apparatus/proc/safedecon()
+/obj/item/borg/apparatus/proc/safe_deconstruction()
 	SIGNAL_HANDLER
-
-	if(stored)
-		stored.forceMove(get_turf(src))
-		stored = null
+	if(!stored)
+		return
+	stored.forceMove(get_turf(src))
+	stored = null
 
 /obj/item/borg/apparatus/Exited(atom/movable/gone, direction)
 	if(gone == stored) //sanity check
@@ -33,15 +36,14 @@
 	update_appearance()
 	return ..()
 
-///A right-click verb, for those not using hotkey mode.
-/obj/item/borg/apparatus/verb/verb_dropHeld()
+/// A right-click verb for those not using hotkey mode.
+/obj/item/borg/apparatus/verb/drop_held_item()
 	set category = "Object"
 	set name = "Drop"
 
 	if(usr != loc || !stored)
 		return
 	stored.forceMove(get_turf(usr))
-	return
 
 /**
 * Attack_self will pass for the stored item.
@@ -66,8 +68,7 @@
 /obj/item/borg/apparatus/get_proxy_attacker_for(atom/target, mob/user)
 	if(stored)
 		return stored
-	else
-		return ..()
+	return ..()
 
 /// Checks if the item is allowed to be inside of the apparatus.
 /obj/item/borg/apparatus/proc/itemcheck(atom/atom)
