@@ -466,3 +466,12 @@
 
 #undef CHARGER_MODE_DRAW
 #undef CHARGER_MODE_CHARGE
+
+/obj/item/borg/slot_machine
+	name = "portable slot machine"
+	desc = "Feed it credits and activate it for a chance to win big!"
+	icon = 'icons/mob/silicon/robot_items.dmi'
+	icon_state = "module_service" // TODO: Need a sprite here!
+	w_class = WEIGHT_CLASS_NORMAL
+	/// The total amount of money that we have.
+	var/total_money = 0

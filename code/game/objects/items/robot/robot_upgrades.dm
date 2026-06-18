@@ -810,6 +810,33 @@
 	model_type = list(/obj/item/robot_model/service)
 	model_flags = BORG_MODEL_SERVICE
 
+/obj/item/borg/upgrade/service_specialization/action(mob/living/silicon/robot/borg, user)
+	. = ..()
+	if(!.)
+		return .
+	for(var/obj/item/borg/upgrade/service_specialization/other_service_specialization in borg.upgrades)
+		other_service_specialization.forceMove(get_turf(borg))
+
+/obj/item/borg/upgrade/service_specialization/advanced_botany
+	name = "service cyborg botany specialization"
+	items_to_add = list(
+		/obj/item/storage/bag/plants,
+		/obj/item/plant_analyzer,
+		/obj/item/shovel/spade,
+		/obj/item/cultivator
+	)
+
+/obj/item/borg/upgrade/service_specialization/advanced_cooking
+	name = "service cyborg cooking specialization"
+	items_to_add = list(
+		/obj/item/knife/kitchen/silicon,
+		/obj/item/borg/apparatus/cooking,
+		/obj/item/borg/cookbook
+	)
+
+/obj/item/borg/upgrade/service_specialization/advanced_bartending
+	name = "service cyborg bartending specialization"
+
 /// This isn't an upgrade or part of the same path, but I'm gonna just stick it here because it's a tool used on cyborgs.
 // A reusable tool that can bring borgs back to life. They gotta be repaired first, though.
 /obj/item/borg_restart_board

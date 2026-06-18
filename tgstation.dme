@@ -6598,7 +6598,6 @@
 #include "monkestation\code\datums\components\turf_checker_complex.dm"
 #include "monkestation\code\datums\components\turf_healing.dm"
 #include "monkestation\code\datums\components\wound_converter.dm"
-#include "monkestation\code\datums\components\crafting\borg_crafting.dm"
 #include "monkestation\code\datums\components\crafting\robot.dm"
 #include "monkestation\code\datums\components\crafting\tailoring.dm"
 #include "monkestation\code\datums\components\enchantments\_enchanted.dm"
