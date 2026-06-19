@@ -539,9 +539,9 @@
 		switch(rand(1,3))
 			if(1)
 				INVOKE_ASYNC(hearer, TYPE_PROC_REF(/mob, emote), "flip")
-			if (2)
+			if(2)
 				INVOKE_ASYNC(hearer, TYPE_PROC_REF(/mob, emote), "spin")
-			if (3)
+			if(3)
 				INVOKE_ASYNC(hearer, TYPE_PROC_REF(/mob, emote), "flip")
 				INVOKE_ASYNC(hearer, TYPE_PROC_REF(/mob, emote), "spin")
 
