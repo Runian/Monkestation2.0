@@ -571,10 +571,6 @@
 	/// The cooldown between dice attempts.
 	COOLDOWN_DECLARE(dice_cooldown)
 
-/obj/item/borg/rng/examine(mob/user)
-	. = ..()
-	. += span_notice("Ctrl-click to configure how many sides it will have.")
-
 /obj/item/dice/rng/update_icon()
 	if(sides && (sides in list(4, 6, 8, 10, 12, 20, 100)))
 		icon = 'icons/obj/toys/dice.dmi'
