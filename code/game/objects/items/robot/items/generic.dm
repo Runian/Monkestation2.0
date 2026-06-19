@@ -523,7 +523,7 @@
 
 /obj/item/borg/disco_dance
 	name = "disco dance"
-	desc = "Emits a irresistable sound that makes everyone suddenly want to move!"
+	desc = "Emits an irresistable sound that makes everyone suddenly want to move!"
 	icon_state = "disco_dance"
 	/// The cooldown between dance attempts.
 	COOLDOWN_DECLARE(dance_cooldown)
@@ -531,7 +531,7 @@
 /obj/item/borg/disco_dance/attack_self(mob/user)
 	if(!COOLDOWN_FINISHED(src, dance_cooldown))
 		return
-	COOLDOWN_START(src, dance_cooldown, 1 SECONDS)
+	COOLDOWN_START(src, dance_cooldown, 1.5 SECONDS)
 	playsound(src, 'sound/effects/arcade_jump.ogg', 50)
 	for(var/mob/hearer in ohearers(7, get_turf(src)))
 		if(HAS_TRAIT(hearer, TRAIT_DEAF))
