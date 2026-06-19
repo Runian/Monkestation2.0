@@ -545,20 +545,6 @@
 				INVOKE_ASYNC(hearer, TYPE_PROC_REF(/mob, emote), "flip")
 				INVOKE_ASYNC(hearer, TYPE_PROC_REF(/mob, emote), "spin")
 
-/obj/item/borg/disco_dance/proc/start_dance()
-	COOLDOWN_START(src, dance_cooldown, 2 SECONDS)
-	for(var/mob/hearer in ohearers(7, get_turf(src)))
-		if(HAS_TRAIT(hearer, TRAIT_DEAF))
-			continue
-		switch(rand(1,3))
-			if(1)
-				INVOKE_ASYNC(hearer, TYPE_PROC_REF(/mob, emote), "flip")
-			if (2)
-				INVOKE_ASYNC(hearer, TYPE_PROC_REF(/mob, emote), "spin")
-			if (3)
-				INVOKE_ASYNC(hearer, TYPE_PROC_REF(/mob, emote), "flip")
-				INVOKE_ASYNC(hearer, TYPE_PROC_REF(/mob, emote), "spin")
-
 /obj/item/borg/rng
 	name = "random number generator"
 	desc = "A robot device that allows a synthetic entity to, finally, make random numbers. The future is here."
