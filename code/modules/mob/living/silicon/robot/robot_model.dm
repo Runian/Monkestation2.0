@@ -960,7 +960,10 @@
 		/obj/item/borg/lollipop,
 		/obj/item/stack/pipe_cleaner_coil/cyborg,
 		/obj/item/borg/apparatus/beaker/service,
-		/obj/item/chisel
+		/obj/item/chisel,
+		/obj/item/borg/gambling_plushie, // TODO: Testing only, remove later.
+		/obj/item/borg/disco_dance,
+		/obj/item/borg/rng
 	)
 	radio_channels = list(RADIO_CHANNEL_SERVICE)
 	emag_modules = list(
@@ -1195,6 +1198,7 @@
 		/obj/item/storage/bag/tray,
 		/obj/item/reagent_containers/borghypo/borgshaker/centcom,
 		/obj/item/borg/apparatus/beaker/service,
+		/obj/item/borg/cookbook
 	)
 	radio_channels = list(RADIO_CHANNEL_CENTCOM)
 	cyborg_base_icon = "centcomborg"
@@ -1227,13 +1231,6 @@
 	. = ..()
 	var/mob/living/silicon/robot/cyborg = loc
 
-	cyborg.AddComponent(/datum/component/personal_crafting/borg)
-	var/datum/component/personal_crafting/borg/crafting = cyborg.GetComponent(/datum/component/personal_crafting/borg)
-	crafting.forced_mode = TRUE
-	crafting.mode = TRUE
-	if(cyborg.client)
-		crafting.create_mob_button(cyborg, cyborg.client)
-
 	qdel(cyborg.radio.keyslot)
 	cyborg.radio.keyslot = new /obj/item/encryptionkey/headset_cent()
 	cyborg.radio.recalculateChannels()
@@ -1252,10 +1249,6 @@
 /obj/item/robot_model/centcom/Destroy()
 	var/mob/living/silicon/robot/cyborg = loc
 	if(istype(cyborg, /mob/living/silicon/robot))
-		qdel(cyborg.GetComponent(/datum/component/personal_crafting/borg))
-		for(var/atom/movable/screen/craft/button in cyborg.hud_used.static_inventory)
-			qdel(button)
-
 		qdel(cyborg.radio.keyslot)
 		cyborg.radio.recalculateChannels()
 

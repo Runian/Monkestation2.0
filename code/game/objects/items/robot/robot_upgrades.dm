@@ -836,6 +836,11 @@
 
 /obj/item/borg/upgrade/service_specialization/advanced_bartending
 	name = "service cyborg bartending specialization"
+	items_to_add = list(
+		/obj/item/borg/gambling_plushie,
+		/obj/item/borg/disco_dance,
+		/obj/item/borg/rng
+	)
 
 /// This isn't an upgrade or part of the same path, but I'm gonna just stick it here because it's a tool used on cyborgs.
 // A reusable tool that can bring borgs back to life. They gotta be repaired first, though.

@@ -467,11 +467,175 @@
 #undef CHARGER_MODE_DRAW
 #undef CHARGER_MODE_CHARGE
 
-/obj/item/borg/slot_machine
-	name = "portable slot machine"
+/obj/item/borg/gambling_plushie
+	name = "gambling plushie"
 	desc = "Feed it credits and activate it for a chance to win big!"
-	icon = 'icons/mob/silicon/robot_items.dmi'
-	icon_state = "module_service" // TODO: Need a sprite here!
+	icon = 'monkestation/code/modules/blueshift/icons/plushes.dmi' // TODO: robot_items.dmi?
+	icon_state = "debug" // TODO: A real sprite.
 	w_class = WEIGHT_CLASS_NORMAL
-	/// The total amount of money that we have.
-	var/total_money = 0
+	/// The current amount of money that we will attempt to double.
+	var/gambling_money = 0
+	/// The cooldown between gambling attempts.
+	COOLDOWN_DECLARE(gambling_cooldown)
+
+/obj/item/borg/gambling_plushie/examine(mob/user)
+	. = ..()
+	. += span_notice("It contains [gambling_money] credits ready to gambled with.")
+
+/obj/item/borg/gambling_plushie/attack_self(mob/user)
+	if(!iscyborg(user))
+		return
+	if(!COOLDOWN_FINISHED(src, gambling_cooldown))
+		return
+	if(!gambling_money)
+		to_chat(user, span_notice("[src] has no money to gamble with."))
+		return
+	COOLDOWN_START(src, gambling_cooldown, 2 SECONDS)
+	user.visible_message(span_notice("[src]'s eyes start spinning!"))
+	playsound(src, 'sound/machines/ding_short.ogg', 50)
+	addtimer(CALLBACK(src, PROC_REF(reveal_winnings), user), 1 SECONDS)
+
+/obj/item/borg/gambling_plushie/interact_with_atom(atom/interacting_with, mob/living/user, list/modifiers)
+	if(!isitem(interacting_with))
+		return NONE
+	var/obj/item/depositing_item = interacting_with
+	var/gambling_value = depositing_item.get_item_credit_value()
+	if(!gambling_value)
+		to_chat(user, span_warning("[src] spits out [interacting_with] as it is not worth anything!"))
+		return
+	gambling_money += gambling_value
+	to_chat(user, span_notice("[src] quicky gobbles up [interacting_with] as the value goes up by [gambling_value] credits."))
+	playsound(src, 'sound/weapons/bite.ogg', 50)
+	qdel(interacting_with)
+
+/// Determines and deals with the outcome of gambling.
+/obj/item/borg/gambling_plushie/proc/reveal_winnings(mob/living/gambling_user)
+	if(prob(33))
+		gambling_user.visible_message(span_notice("[src] cashes out!"))
+		playsound(src, 'sound/arcade/win.ogg', 10)
+		var/obj/item/holochip/gambling_winnings = new(gambling_user.drop_location(), gambling_money * 2)
+		gambling_winnings.throw_at(get_step(loc, pick(GLOB.alldirs)), 3 , 1, gambling_user)
+		gambling_money = 0
+		return
+	gambling_user.visible_message(span_notice("[src] gobbles up all the money!"))
+	playsound(src, 'sound/machines/buzz-sigh.ogg', 10, 1)
+	gambling_money = 0
+
+/obj/item/borg/disco_dance
+	name = "disco dance"
+	desc = "Emits a irresistable sound that makes everyone suddenly want to move!"
+	icon_state = "disco_dance"
+	/// The cooldown between dance attempts.
+	COOLDOWN_DECLARE(dance_cooldown)
+
+/obj/item/borg/disco_dance/attack_self(mob/user)
+	if(!COOLDOWN_FINISHED(src, dance_cooldown))
+		return
+	COOLDOWN_START(src, dance_cooldown, 1 SECONDS)
+	playsound(src, 'sound/effects/arcade_jump.ogg', 50)
+	for(var/mob/hearer in ohearers(7, get_turf(src)))
+		if(HAS_TRAIT(hearer, TRAIT_DEAF))
+			continue
+		switch(rand(1,3))
+			if(1)
+				INVOKE_ASYNC(hearer, TYPE_PROC_REF(/mob, emote), "flip")
+			if (2)
+				INVOKE_ASYNC(hearer, TYPE_PROC_REF(/mob, emote), "spin")
+			if (3)
+				INVOKE_ASYNC(hearer, TYPE_PROC_REF(/mob, emote), "flip")
+				INVOKE_ASYNC(hearer, TYPE_PROC_REF(/mob, emote), "spin")
+
+
+/obj/item/borg/disco_dance/proc/start_dance()
+	COOLDOWN_START(src, dance_cooldown, 2 SECONDS)
+	for(var/mob/hearer in ohearers(7, get_turf(src)))
+		if(HAS_TRAIT(hearer, TRAIT_DEAF))
+			continue
+		switch(rand(1,3))
+			if(1)
+				INVOKE_ASYNC(hearer, TYPE_PROC_REF(/mob, emote), "flip")
+			if (2)
+				INVOKE_ASYNC(hearer, TYPE_PROC_REF(/mob, emote), "spin")
+			if (3)
+				INVOKE_ASYNC(hearer, TYPE_PROC_REF(/mob, emote), "flip")
+				INVOKE_ASYNC(hearer, TYPE_PROC_REF(/mob, emote), "spin")
+
+/obj/item/borg/rng
+	name = "random number generator"
+	desc = "A robot device that allows a synthetic entity to, finally, make random numbers. The future is here."
+	icon = 'icons/obj/toys/dice.dmi'
+	icon_state = "magicdicebag"
+	/// How many sides do we have?
+	var/sides
+	/// What is the current result?
+	var/result
+	/// The cooldown between dice attempts.
+	COOLDOWN_DECLARE(dice_cooldown)
+
+/obj/item/borg/rng/examine(mob/user)
+	. = ..()
+	. += span_notice("Ctrl-click to configure how many sides it will have.")
+
+/obj/item/dice/rng/update_icon()
+	if(sides && (sides in list(4, 6, 8, 10, 12, 20, 100)))
+		icon = 'icons/obj/toys/dice.dmi'
+	else
+		icon = initial(icon)
+	return ..()
+
+/obj/item/dice/rng/update_icon_state()
+	. = ..()
+	switch(sides)
+		if(4)
+			icon_state = "d4"
+			return
+		if(6)
+			icon_state = "d6"
+			return
+		if(8)
+			icon_state = "d8"
+			return
+		if(10)
+			icon_state = "d10"
+			return
+		if(12)
+			icon_state = "d12"
+			return
+		if(20)
+			icon_state = "d20"
+			return
+		if(100)
+			icon_state = "d100"
+			return
+	icon_state = initial(icon_state)
+
+/obj/item/borg/rng/update_overlays()
+	. = ..()
+	if(icon_state == initial(icon_state))
+		return
+	. += "[icon_state]-[result]"
+
+/obj/item/borg/rng/attack_self(mob/user)
+	if(!COOLDOWN_FINISHED(src, dice_cooldown))
+		return
+	if(!sides)
+		user.balloon_alert(user, "not configured!")
+		return
+	COOLDOWN_START(src, dice_cooldown, 1 SECONDS)
+	result = rand(1, sides)
+	user.visible_message(
+		span_notice("\The [user] rolls a virtual [sides]-sided die. The result is [result]."),
+		span_notice("You roll a virtual [sides]-sided die. The result is [result]."),
+		span_notice("You hear synthesized audio of clattering plastic with a soft ping.")
+	)
+	user.balloon_alert(user, "rolled: [result]")
+	playsound(user, 'sound/effects/diceroll_robotic.ogg', 75, 0)
+
+/obj/item/borg/rng/attack_self_secondary(mob/user, modifiers)
+	var/desired_sides = tgui_input_number(user, "Enter how many faces you want your virtual dice to have, (no more than 1000 sides):", "Custom Dice Roll", 4, 1000, 0)
+	if(desired_sides <= 0)
+		return
+	sides = round(desired_sides)
+	result = roll(sides)
+	user.balloon_alert(user, "selected: [sides]")
+	update_appearance()
