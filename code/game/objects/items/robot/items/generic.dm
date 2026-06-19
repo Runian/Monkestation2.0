@@ -571,14 +571,14 @@
 	/// The cooldown between dice attempts.
 	COOLDOWN_DECLARE(dice_cooldown)
 
-/obj/item/dice/rng/update_icon()
+/obj/item/borg/rng/update_icon()
 	if(sides && (sides in list(4, 6, 8, 10, 12, 20, 100)))
 		icon = 'icons/obj/toys/dice.dmi'
 	else
 		icon = initial(icon)
 	return ..()
 
-/obj/item/dice/rng/update_icon_state()
+/obj/item/borg/rng/update_icon_state()
 	. = ..()
 	switch(sides)
 		if(4)
