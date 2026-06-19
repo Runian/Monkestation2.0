@@ -523,7 +523,7 @@
 
 /obj/item/borg/disco_dance
 	name = "disco dance"
-	desc = "Emits an irresistable sound that makes everyone suddenly want to move!"
+	desc = "Emits an irresistible sound that makes everyone suddenly want to move!"
 	icon_state = "disco_dance"
 	/// The cooldown between dance attempts.
 	COOLDOWN_DECLARE(dance_cooldown)
