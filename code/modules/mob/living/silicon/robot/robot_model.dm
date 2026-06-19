@@ -963,7 +963,8 @@
 		/obj/item/chisel,
 		/obj/item/borg/gambling_plushie, // TODO: Testing only, remove later.
 		/obj/item/borg/disco_dance,
-		/obj/item/borg/rng
+		/obj/item/borg/rng,
+		/obj/item/toy/cards/deck/cyborg
 	)
 	radio_channels = list(RADIO_CHANNEL_SERVICE)
 	emag_modules = list(

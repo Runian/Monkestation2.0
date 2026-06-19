@@ -611,6 +611,7 @@
 	)
 	user.balloon_alert(user, "rolled: [result]")
 	playsound(user, 'sound/effects/diceroll_robotic.ogg', 75, 0)
+	update_appearance()
 
 /obj/item/borg/rng/attack_self_secondary(mob/user, modifiers)
 	var/desired_sides = tgui_input_number(user, "Enter how many faces you want your virtual dice to have, (no more than 1000 sides):", "Custom Dice Roll", 4, 1000, 0)
@@ -620,3 +621,76 @@
 	result = roll(sides)
 	user.balloon_alert(user, "selected: [sides]")
 	update_appearance()
+
+/obj/item/toy/cards/deck/cyborg
+	name = "dealer module"
+	desc = "A module for handling, fabricating cards and tricking suckers into gambling away their money."
+	can_drag_pickup = FALSE
+
+/obj/item/toy/cards/deck/cyborg/examine(mob/user)
+	. = ..()
+	. += span_notice("Left-click to draw and place a card facedown.")
+	. += span_notice("Right-click to draw and place a card faceup, or to flip a card over.")
+	. += span_notice("Ctrl-click to fabricate a new set of cards.")
+
+/obj/item/toy/cards/deck/cyborg/item_ctrl_click(mob/user)
+	if(!iscyborg(user))
+		return NONE
+	var/mob/living/silicon/robot/cyborg_user = user
+	if(!cyborg_user.cell || !cyborg_user.cell.use(0.03 * STANDARD_CELL_CHARGE))
+		return CLICK_ACTION_BLOCKING
+	QDEL_LIST(card_atoms)
+	card_atoms = null
+	update_appearance()
+	user.balloon_alert(user, span_notice("cards re-fabricated!"))
+	return CLICK_ACTION_SUCCESS
+
+/obj/item/toy/cards/deck/cyborg/interact_with_atom(atom/interacting_with, mob/living/user, list/modifiers)
+	if(istype(interacting_with, /obj/item/toy/singlecard))
+		var/obj/item/toy/singlecard/single_card = interacting_with
+		if(!user.temporarilyRemoveItemFromInventory(single_card))
+			to_chat(user, span_warning("The card is stuck... You can't add it to the deck!"))
+			return ITEM_INTERACT_BLOCKING
+		insert(single_card)
+		user.visible_message(
+			span_notice("[user] adds a card to the bottom of the deck."),\
+			span_notice("You add the card to the bottom of the deck.")
+		)
+		return ITEM_INTERACT_SUCCESS
+	if(istype(interacting_with, /obj/item/toy/cards/cardhand))
+		var/obj/item/toy/cards/cardhand/card_hand = interacting_with
+		if(!user.temporarilyRemoveItemFromInventory(card_hand))
+			to_chat(user, span_warning("The cards are stuck... You can't add it to the deck!"))
+			return ITEM_INTERACT_BLOCKING
+		insert(card_hand)
+		user.visible_message(
+			span_notice("[user] puts [user.p_their()] hand of cards in the deck."),\
+			span_notice("You put the hand of cards in the deck.")
+		)
+		return ITEM_INTERACT_SUCCESS
+	if(!perform_draw_throw(interacting_with, user))
+		return ITEM_INTERACT_BLOCKING
+	return ITEM_INTERACT_SUCCESS
+
+/obj/item/toy/cards/deck/cyborg/interact_with_atom_secondary(atom/interacting_with, mob/living/user, list/modifiers)
+	if(istype(interacting_with, /obj/item/toy/singlecard))
+		var/obj/item/toy/singlecard/single_card = interacting_with
+		single_card.Flip()
+		if(isturf(single_card.loc)) // Snitching on people flipping over obviously visible cards.
+			user.balloon_alert_to_viewers("flips a card")
+		return ITEM_INTERACT_SUCCESS
+	if(!perform_draw_throw(interacting_with, user, TRUE))
+		return ITEM_INTERACT_BLOCKING
+	return ITEM_INTERACT_SUCCESS
+
+/// Draws and throws the card.
+/obj/item/toy/cards/deck/cyborg/proc/perform_draw_throw(atom/interacting_with, mob/living/user, should_flip = FALSE)
+	var/obj/item/toy/singlecard/drawn_card = draw(user)
+	if(!drawn_card)
+		return FALSE
+	user.balloon_alert_to_viewers("draws a card")
+	if(should_flip)
+		drawn_card.Flip()
+	drawn_card.forceMove(get_turf(src))
+	drawn_card.throw_at(get_turf(interacting_with), 10, 1, user)
+	return TRUE

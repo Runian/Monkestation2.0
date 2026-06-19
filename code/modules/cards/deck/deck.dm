@@ -12,6 +12,8 @@
 	attack_verb_continuous = list("attacks")
 	attack_verb_simple = list("attack")
 	interaction_flags_click = NEED_DEXTERITY|FORBID_TELEKINESIS_REACH|ALLOW_RESTING
+	/// Should we get the drag_pickup element? Will also add information to examine that we can drag pickup.
+	var/can_drag_pickup = TRUE
 	/// The amount of time it takes to shuffle
 	var/shuffle_time = DECK_SHUFFLE_TIME
 	/// Deck shuffling cooldown.
@@ -33,7 +35,8 @@
 
 /obj/item/toy/cards/deck/Initialize(mapload)
 	. = ..()
-	AddElement(/datum/element/drag_pickup)
+	if(can_drag_pickup)
+		AddElement(/datum/element/drag_pickup)
 	RegisterSignal(src, COMSIG_TWOHANDED_WIELD, PROC_REF(on_wield))
 	RegisterSignal(src, COMSIG_TWOHANDED_UNWIELD, PROC_REF(on_unwield))
 	AddComponent(/datum/component/two_handed, attacksound='sound/items/cardflip.ogg')
@@ -41,8 +44,10 @@
 
 	if(!is_standard_deck)
 		return
+	populate_deck()
 
-	// generate a normal playing card deck
+/// Generate a normal playing card deck.
+/obj/item/toy/cards/deck/proc/populate_deck()
 	initial_cards += "Joker Clown"
 	initial_cards += "Joker Mime"
 	for(var/suit in list("Hearts", "Spades", "Clubs", "Diamonds"))
@@ -82,8 +87,8 @@
 		var/marked_color = card.getMarkedColor(user)
 		if(marked_color)
 			. += span_notice("The top card of the deck has a [marked_color] mark on the corner!")
-
-	. += span_notice("Click and drag the deck to yourself to pickup.") // This should be a context screentip
+	if(can_drag_pickup)
+		. += span_notice("Click and drag the deck to yourself to pickup.") // This should be a context screentip
 
 /obj/item/toy/cards/deck/add_context(atom/source, list/context, obj/item/held_item, mob/living/user)
 	if(src == held_item)
