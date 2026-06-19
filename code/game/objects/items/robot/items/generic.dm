@@ -629,8 +629,8 @@
 
 /obj/item/toy/cards/deck/cyborg/examine(mob/user)
 	. = ..()
-	. += span_notice("Left-click to draw and place a card facedown.")
-	. += span_notice("Right-click to draw and place a card faceup, or to flip a card over.")
+	. += span_notice("Left-click to draw and throw a card facedown.")
+	. += span_notice("Right-click to draw and throw a card faceup, or to flip a card over.")
 	. += span_notice("Ctrl-click to fabricate a new set of cards.")
 
 /obj/item/toy/cards/deck/cyborg/item_ctrl_click(mob/user)
