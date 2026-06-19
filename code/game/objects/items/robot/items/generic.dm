@@ -545,7 +545,6 @@
 				INVOKE_ASYNC(hearer, TYPE_PROC_REF(/mob, emote), "flip")
 				INVOKE_ASYNC(hearer, TYPE_PROC_REF(/mob, emote), "spin")
 
-
 /obj/item/borg/disco_dance/proc/start_dance()
 	COOLDOWN_START(src, dance_cooldown, 2 SECONDS)
 	for(var/mob/hearer in ohearers(7, get_turf(src)))
