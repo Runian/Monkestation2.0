@@ -26,7 +26,7 @@
 	cost = 16
 	scaling_cost = 10
 
-	minimum_players = 25
+	minimum_players = 1
 
 	requirements = list(90,80,80,70,60,40,30,20,10,10)
 	antag_cap = 1

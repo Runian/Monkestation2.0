@@ -30,7 +30,7 @@
 	weight = 5
 	cost = 8 // Avoid raising traitor threat above this, as it is the default low cost ruleset.
 	scaling_cost = 9
-	minimum_players = 10
+	minimum_players = 1
 	requirements = list(20,16,10,8,8,8,8,8,8,8)
 	antag_cap = list("denominator" = 38)
 
@@ -64,7 +64,7 @@
 	required_candidates = 1
 	weight = 3
 	cost = 18
-	minimum_players = 25
+	minimum_players = 1
 	requirements = list(90,80,80,70,60,40,30,20,10,10)
 	antag_cap = 1
 	flags = HIGH_IMPACT_RULESET
@@ -184,7 +184,7 @@
 	cost = 16
 	scaling_cost = 10
 
-	minimum_players = 20
+	minimum_players = 1
 
 	requirements = list(70,70,60,50,40,20,20,10,10,10)
 	antag_cap = list("denominator" = 29)
@@ -242,7 +242,7 @@
 	weight = 4
 	cost = 10
 
-	minimum_players = 20
+	minimum_players = 1
 
 	scaling_cost = 9
 	requirements = list(101,101,50,20,20,10,10,10,10,10)
@@ -297,7 +297,7 @@
 	requirements = list(90,90,90,80,60,40,30,20,10,10)
 	ruleset_lazy_templates = list(LAZY_TEMPLATE_KEY_WIZARDDEN)
 
-	minimum_players = 30
+	minimum_players = 1
 
 
 /datum/dynamic_ruleset/roundstart/wizard/ready(forced = FALSE)
@@ -371,7 +371,7 @@
 	antag_cap = list("denominator" = 20, "offset" = 1)
 	var/datum/team/cult/main_cult
 
-	minimum_players = 30
+	minimum_players = 1
 
 /datum/dynamic_ruleset/roundstart/bloodcult/ready(population, forced = FALSE)
 	required_candidates = get_antag_cap(population)
@@ -447,7 +447,7 @@
 	var/required_role = ROLE_NUCLEAR_OPERATIVE
 	var/datum/team/nuclear/nuke_team
 
-	minimum_players = 30
+	minimum_players = 1
 
 /datum/dynamic_ruleset/roundstart/nuclear/ready(population, forced = FALSE)
 	required_candidates = get_antag_cap(population)
@@ -549,7 +549,7 @@
 	flags = HIGH_IMPACT_RULESET
 	// blocking_rules = list(/datum/dynamic_ruleset/latejoin/provocateur)
 	// I give up, just there should be enough heads with 35 players...
-	minimum_players = 35
+	minimum_players = 1
 	var/datum/team/revolution/revolution
 	var/finished = FALSE
 
@@ -652,7 +652,7 @@
 	requirements = list(101,101,101,101,101,101,101,101,101,101)
 	required_role = ROLE_CLOWN_OPERATIVE
 
-	minimum_players = 30
+	minimum_players = 1
 
 
 /datum/dynamic_ruleset/roundstart/nuclear/clown_ops/pre_execute()
@@ -761,7 +761,7 @@
 	weight = 5
 	cost = 8
 	scaling_cost = 10 // Bit higher than traitors due to the high cap
-	minimum_players = 8
+	minimum_players = 1
 	antag_cap = list("denominator" = 6, "offset" = 1) // should have quite a few spies to work against each other
 	requirements = list(20,16,10,8,8,8,8,8,8,8)
 

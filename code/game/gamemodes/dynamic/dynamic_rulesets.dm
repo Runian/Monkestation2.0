@@ -120,6 +120,7 @@
 		log_dynamic("FAIL: [src] failed acceptable: threat_level ([threat_level]) < requirement ([requirements[indice_pop]])")
 		return FALSE
 
+	log_dynamic("SUCCESS: [src] passed acceptable.")
 	return TRUE
 
 /// When picking rulesets, if dynamic picks the same one multiple times, it will "scale up".
@@ -157,11 +158,13 @@
 /// Do everything you need to do before job is assigned here.
 /// IMPORTANT: ASSIGN special_role HERE
 /datum/dynamic_ruleset/proc/pre_execute()
+	log_dynamic("PRE_EXECUTE: [src]")
 	return TRUE
 
 /// Called on post_setup on roundstart and when the rule executes on midround and latejoin.
 /// Give your candidates or assignees equipment and antag datum here.
 /datum/dynamic_ruleset/proc/execute()
+	log_dynamic("EXECUTE: [src]")
 	for(var/datum/mind/M in assigned)
 		M.add_antag_datum(antag_datum)
 		GLOB.pre_setup_antags -= M
@@ -174,7 +177,7 @@
 	candidates = list()
 	assigned = list()
 	antag_datum = null
-	
+
 /// Here you can perform any additional checks you want. (such as checking the map etc)
 /// Remember that on roundstart no one knows what their job is at this point.
 /// IMPORTANT: If ready() returns TRUE, that means pre_execute() or execute() should never fail!

@@ -22,7 +22,7 @@
 	flags = HIGH_IMPACT_RULESET
 	antag_cap = list("denominator" = 20, "offset" = 1)
 
-	minimum_players = 30
+	minimum_players = 1
 
 /datum/dynamic_ruleset/roundstart/clock_cult/ready(population, forced = FALSE)
 	required_candidates = get_antag_cap(population)
