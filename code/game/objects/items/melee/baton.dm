@@ -202,8 +202,8 @@
 	if(iscyborg(target))
 		if(!affect_cyborg)
 			return FALSE
-		target.flash_act(affect_silicon = TRUE)
-		target.Paralyze((isnull(stun_override) ? stun_time_cyborg : stun_override) * (trait_check ? 0.1 : 1))
+		var/mob/living/silicon/robot/cyborg_target = target
+		cyborg_target.try_standard_flashing(FALSE, TRUE, (isnull(stun_override) ? stun_time_cyborg : stun_override) * (trait_check ? 0.1 : 1), 0 SECONDS)
 		additional_effects_cyborg(target, user)
 	else
 		if(!trait_check)

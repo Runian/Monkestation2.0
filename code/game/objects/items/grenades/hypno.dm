@@ -30,14 +30,15 @@
 	qdel(src)
 
 /obj/item/grenade/hypnotic/proc/bang(turf/turf, mob/living/living_mob)
-	if(living_mob.stat == DEAD) //They're dead!
+	if(living_mob.stat == DEAD) // They're dead!
 		return
 	var/distance = max(0, get_dist(get_turf(src), turf))
 
-	//Bang
-	var/hypno_sound = FALSE
+	var/hypno_sound = FALSE // Will they have hallucinations?
+	var/paralyze_duration = 0 SECONDS
+	var/knockdown_duration = 0 SECONDS
 
-	//Hearing protection check
+	// Banging.
 	if(iscarbon(living_mob))
 		var/mob/living/carbon/target = living_mob
 		var/list/reflist = list(1)
@@ -49,29 +50,39 @@
 			hypno_sound = TRUE
 
 	if(!distance || loc == living_mob || loc == living_mob.loc)
-		living_mob.Paralyze(10)
-		living_mob.Knockdown(100)
+		paralyze_duration = max(paralyze_duration, 1 SECONDS)
+		knockdown_duration = max(knockdown_duration, 1 SECONDS)
+		if(iscarbon(living_mob))
+			hypno_sound = TRUE
+	else if(distance <= 1)
+		paralyze_duration = max(paralyze_duration, 0.5 SECONDS)
+		knockdown_duration = max(knockdown_duration, 3 SECONDS)
+
+	if(hypno_sound)
 		to_chat(living_mob, span_hypnophrase("The sound echoes in your brain..."))
 		living_mob.adjust_hallucinations(100 SECONDS)
 
-	else
-		if(distance <= 1)
-			living_mob.Paralyze(5)
-			living_mob.Knockdown(30)
-		if(hypno_sound)
-			to_chat(living_mob, span_hypnophrase("The sound echoes in your brain..."))
-			living_mob.adjust_hallucinations(100 SECONDS)
+	// Flashing.
+	if(living_mob.flash_act(affect_silicon = TRUE))
+		paralyze_duration = max(paralyze_duration, max(1 SECONDS / max(1, distance), 0.5 SECONDS))
+		knockdown_duration = max(knockdown_duration, max(10 SECONDS / max(1, distance), 4 SECONDS))
 
-	//Flash
-	if(living_mob.flash_act(affect_silicon = 1))
-		living_mob.Paralyze(max(10/max(1, distance), 5))
-		living_mob.Knockdown(max(100/max(1, distance), 40))
+		if(iscyborg(living_mob))
+			var/mob/living/silicon/robot/flashed_cyborg = living_mob
+			successfully_flashed = flashed_cyborg.try_standard_flashing(TRUE, FALSE, max(paralyze_duration, knockdown_duration))
+			return // Cyborg handles their stuns differently.
+
 		if(iscarbon(living_mob))
 			var/mob/living/carbon/target = living_mob
-			if(target.hypnosis_vulnerable()) //The sound causes the necessary conditions unless the target has mindshield or hearing protection
+			if(target.hypnosis_vulnerable()) // Hallucinations may allow hypnosis, but other conditions may prevent it (e.g. mindshield).
 				target.apply_status_effect(/datum/status_effect/trance, 100, TRUE)
 			else
 				to_chat(target, span_hypnophrase("The light is so pretty..."))
 				target.adjust_drowsiness_up_to(20 SECONDS, 40 SECONDS)
 				target.adjust_confusion_up_to(10 SECONDS, 20 SECONDS)
 				target.adjust_dizzy_up_to(20 SECONDS, 40 SECONDS)
+
+	if(paralyze_duration)
+		living_mob.Paralyze(paralyze_duration)
+	if(knockdown_duration)
+		living_mob.Knockdown(knockdown_duration)

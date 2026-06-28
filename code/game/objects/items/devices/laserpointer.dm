@@ -98,6 +98,7 @@
 
 	var/outmsg
 	var/turf/targloc = get_turf(target)
+	var/successful_lasing = prob(effectchance * diode.rating) // Used in many places, but only cares about its outcome once.
 
 	//human/alien mobs
 	if(iscarbon(target))
@@ -111,7 +112,7 @@
 				severity = 0
 
 			//chance to actually hit the eyes depends on internal component
-			if(prob(effectchance * diode.rating) && C.flash_act(severity))
+			if(successful_lasing && C.flash_act(severity))
 				outmsg = span_notice("You blind [C] by shining [src] in [C.p_their()] eyes.")
 				log_combat(user, C, "blinded with a laser pointer",src)
 			else
@@ -120,22 +121,21 @@
 
 	//robots
 	else if(iscyborg(target))
-		var/mob/living/silicon/S = target
-		log_combat(user, S, "shone in the sensors", src)
-		//chance to actually hit the eyes depends on internal component
-		if(prob(effectchance * diode.rating) && S.flash_act(affect_silicon = TRUE))
-			S.Paralyze(rand(100,200))
-			to_chat(S, span_danger("Your sensors were overloaded by a laser!"))
-			outmsg = span_notice("You overload [S] by shining [src] at [S.p_their()] sensors.")
-		else
-			outmsg = span_warning("You fail to overload [S] by shining [src] at [S.p_their()] sensors!")
+		var/mob/living/silicon/robot/flashed_cyborg = target
+		outmsg = span_warning("You fail to overload [flashed_cyborg] by shining [src] at [flashed_cyborg.p_their()] sensors!") // Assume failure until otherwise.
+
+		log_combat(user, flashed_cyborg, "shone in the sensors", src)
+		// Chance to actually hit the eyes depends on internal component.
+		if(successful_lasing && flashed_cyborg.try_standard_flashing(FALSE, FALSE, BORG_STANDARD_FLASH_DURATION))
+			outmsg = span_notice("You overload [flashed_cyborg] by shining [src] at [flashed_cyborg.p_their()] sensors.")
+			to_chat(flashed_cyborg, span_danger("Your sensors were overloaded by a laser!"))
 
 	//cameras
 	else if(istype(target, /obj/machinery/camera))
 		var/obj/machinery/camera/target_camera = target
 		if(!target_camera.camera_enabled && !target_camera.emped)
 			outmsg = span_notice("You point [src] at [target_camera], but it seems to be disabled.")
-		else if(prob(effectchance * diode.rating))
+		else if(successful_lasing)
 			target_camera.emp_act(EMP_HEAVY)
 			outmsg = span_notice("You hit the lens of [target_camera] with [src], temporarily disabling the camera!")
 			log_combat(user, target_camera, "EMPed", src)
@@ -150,7 +150,7 @@
 			continue
 		if(user.body_position == STANDING_UP)
 			H.setDir(get_dir(H,targloc)) // kitty always looks at the light
-			if(prob(effectchance * diode.rating))
+			if(successful_lasing)
 				H.visible_message(span_warning("[H] makes a grab for the light!"),span_userdanger("LIGHT!"))
 				H.Move(targloc)
 				log_combat(user, H, "moved with a laser pointer",src)

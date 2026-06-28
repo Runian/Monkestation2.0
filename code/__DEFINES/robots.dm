@@ -38,6 +38,9 @@
 /// The minimum power consumption of a cyborg.
 #define BORG_MINIMUM_POWER_CONSUMPTION (1 WATTS)
 
+/// The standard amount of time a cyborg is stunned through flashes.
+#define BORG_STANDARD_FLASH_DURATION 7 SECONDS
+
 //Module slot define
 ///The third module slots is disabed.
 #define BORG_MODULE_THREE_DISABLED (1<<0)

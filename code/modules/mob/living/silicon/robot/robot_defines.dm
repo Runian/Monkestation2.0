@@ -141,6 +141,8 @@
 	var/previous_health
 	/// Station alert datum for showing alerts UI
 	var/datum/station_alert/alert_control
+	/// When was the last time that they were flashed?
+	COOLDOWN_DECLARE(last_flashed)
 
 // Defining specific kinds of robots
 ///This is the subtype that gets created by robot suits. It's needed so that those kind of borgs don't have a useless cell in them

@@ -54,10 +54,10 @@
 /datum/action/changeling/defib_grasp/proc/remove_arms(mob/living/carbon/changeling, mob/living/defibber, obj/item/shockpaddles/defib)
 
 	if(iscyborg(defibber))
-		if(defibber.flash_act(affect_silicon = TRUE))
-			to_chat(defibber, span_userdanger("[changeling] awakens suddenly, overloading your sensors!"))
-			// run default visible message regardless, no overt indication of the cyborg being overloaded to watchers
-
+		var/mob/living/silicon/robot/flashed_cyborg = living_mob
+		if(flashed_cyborg.try_standard_flashing(FALSE, TRUE, BORG_STANDARD_FLASH_DURATION))
+			to_chat(flashed_cyborg, span_userdanger("[changeling] awakens suddenly, overloading your sensors!"))
+		// run default visible message regardless, no overt indication of the cyborg being overloaded to watchers
 	else
 		defibber.Stun(4 SECONDS) // stuck defibbing
 

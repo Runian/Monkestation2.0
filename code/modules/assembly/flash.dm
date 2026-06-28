@@ -261,16 +261,16 @@
 	if(iscarbon(M))
 		flash_carbon(M, user, confusion_duration = 5 SECONDS, targeted = TRUE)
 		return
-	if(issilicon(M))
+	if(iscyborg(M))
 		var/mob/living/silicon/robot/flashed_borgo = M
 		log_combat(user, flashed_borgo, "flashed", src)
 		update_icon(ALL, TRUE)
-		if(!flashed_borgo.flash_act(affect_silicon = TRUE))
+
+		var/flash_successful = flashed_borgo.try_standard_flashing(FALSE, FALSE, BORG_STANDARD_FLASH_DURATION, BORG_STANDARD_FLASH_DURATION * CONFUSION_STACK_MAX_MULTIPLIER)
+		if(!flash_successful)
 			user.visible_message(span_warning("[user] fails to blind [flashed_borgo] with the flash!"), span_warning("You fail to blind [flashed_borgo] with the flash!"))
-			return
-		flashed_borgo.Paralyze(7 SECONDS)
-		flashed_borgo.set_confusion_if_lower(5 SECONDS * CONFUSION_STACK_MAX_MULTIPLIER)
-		user.visible_message(span_warning("[user] overloads [flashed_borgo]'s sensors with the flash!"), span_danger("You overload [flashed_borgo]'s sensors with the flash!"))
+		else
+			user.visible_message(span_warning("[user] overloads [flashed_borgo]'s sensors with the flash!"), span_danger("You overload [flashed_borgo]'s sensors with the flash!"))
 		return
 
 	user.visible_message(span_warning("[user] fails to blind [M] with the flash!"), span_warning("You fail to blind [M] with the flash!"))

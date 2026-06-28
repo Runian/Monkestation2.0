@@ -15,7 +15,11 @@
 							span_userdanger("[user] slashes at you!"), null, null, user)
 			to_chat(user, span_danger("You slash at [src]!"))
 			if(prob(8))
-				flash_act(affect_silicon = 1)
+				if(iscyborg(C))
+					var/mob/living/silicon/robot/flashed_cyborg = C
+					flashed_cyborg.try_standard_flashing(FALSE, TRUE)
+				else
+					flash_act(affect_silicon = TRUE)
 			log_combat(user, src, "attacked")
 			adjustBruteLoss(damage)
 			updatehealth()
@@ -166,7 +170,7 @@
 			unbuckle_mob(M)
 			M.Paralyze(40)
 			M.visible_message(span_boldwarning("[M] is thrown off of [src]!"))
-	flash_act(affect_silicon = 1)
+	flash_act(affect_silicon = TRUE)
 
 /mob/living/silicon/bullet_act(obj/projectile/hitting_projectile, def_zone, piercing_hit = FALSE)
 	. = ..()

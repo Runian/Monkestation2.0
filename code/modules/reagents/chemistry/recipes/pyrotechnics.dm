@@ -297,11 +297,16 @@
 		var/atom/A = holder.my_atom
 		A.flash_lighting_fx(range = (range + 2))
 	for(var/mob/living/C in get_hearers_in_view(range, location))
+		if(iscyborg(C))
+			var/mob/living/silicon/robot/flashed_cyborg = C
+			flashed_cyborg.try_standard_flashing(FALSE, FALSE, get_dist(C, location) < 4 ? 6 SECONDS : 10 SECONDS)
+			continue
 		if(C.flash_act(affect_silicon = TRUE))
 			if(get_dist(C, location) < 4)
-				C.Paralyze(60)
-			else
-				C.Stun(100)
+				C.Paralyze(6 SECONDS)
+				continue
+			C.Stun(10 SECONDS)
+
 	holder.remove_reagent(/datum/reagent/flash_powder, created_volume*3)
 
 /datum/chemical_reaction/flash_powder_flash
@@ -317,11 +322,15 @@
 		var/atom/A = holder.my_atom
 		A.flash_lighting_fx(range = (range + 2))
 	for(var/mob/living/C in get_hearers_in_view(range, location))
+		if(iscyborg(C))
+			var/mob/living/silicon/robot/flashed_cyborg = C
+			flashed_cyborg.try_standard_flashing(FALSE, FALSE, duration)
+			continue
 		if(C.flash_act(affect_silicon = TRUE))
 			if(get_dist(C, location) < 4)
-				C.Paralyze(60)
-			else
-				C.Stun(100)
+				C.Paralyze(6 SECONDS)
+				continue
+			C.Stun(10 SECONDS)
 
 /datum/chemical_reaction/smoke_powder
 	results = list(/datum/reagent/smoke_powder = 3)

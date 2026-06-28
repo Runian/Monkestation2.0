@@ -56,7 +56,7 @@
 	if(iscyborg(target))
 		var/mob/living/silicon/silicon = target
 		log_combat(shell, silicon, "shone in the sensors", src)
-		silicon.flash_act(affect_silicon = TRUE) /// no stunning, just a blind
+		silicon.flash_act(affect_silicon = TRUE) /// No stunning, just a blind.
 		to_chat(silicon, span_danger("Your sensors were overloaded by a weakened laser shone by [shell]!"))
 
 	var/mutable_appearance/laser_location = mutable_appearance('icons/obj/weapons/guns/projectiles.dmi', "[pointer_icon_state]_laser")

@@ -314,11 +314,12 @@ GLOBAL_LIST_INIT(blacklisted_borg_hats, typecacheof(list( //Hats that don't real
 	. = ..()
 	if(. & EMP_PROTECT_SELF)
 		return
+
 	switch(severity)
-		if(1)
-			Stun(160)
-		if(2)
-			Stun(60)
+		if(EMP_HEAVY)
+			try_standard_flashing(TRUE, TRUE, 16 SECONDS)
+		if(EMP_LIGHT)
+			try_standard_flashing(TRUE, TRUE, 6 SECONDS)
 
 /mob/living/silicon/robot/emag_act(mob/user, obj/item/card/emag/emag_card)
 	if(user == src)//To prevent syndieborgs from emagging themselves
@@ -454,3 +455,16 @@ GLOBAL_LIST_INIT(blacklisted_borg_hats, typecacheof(list( //Hats that don't real
 	if(!borg.cell.charge())
 		shield.Activate() // Turns it off.
 	return ..()
+
+/// Applies a standardized effects for getting flashed if applicable.
+/mob/living/silicon/robot/proc/try_standard_flashing(skip_flash_act = FALSE, bypass_cooldown = FALSE, paralyze_duration = 0 SECONDS, confusion_duration = 0 SECONDS)
+	if(!skip_flash_act && !flash_act(affect_silicon = TRUE))
+		return FALSE
+	if(!bypass_cooldown && !COOLDOWN_FINISHED(src, last_flashed))
+		return FALSE
+	if(paralyze_duration)
+		COOLDOWN_START(src, last_flashed, paralyze_duration)
+		Paralyze(paralyze_duration)
+	if(confusion_duration)
+		set_confusion_if_lower(confusion_duration)
+	return TRUE
