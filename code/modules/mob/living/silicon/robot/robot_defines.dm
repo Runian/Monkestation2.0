@@ -23,6 +23,12 @@
 	var/obj/item/robot_model/model = null
 	///Variable to store a cyborg's model type incase someone uses a transform module on a cyborg with no client.
 	var/pending_model = null
+	/**
+	 * The skin that we are currently using. Will be created & applied upon initialization.
+	 *
+	 * Do not directly set this outside of Initialize! Use [/proc/apply_skin] instead!
+	 */
+	var/datum/robot_skin/skin = /datum/robot_skin/standard/default
 
 	radio = /obj/item/radio/borg
 
@@ -156,11 +162,12 @@
 	cell = null
 
 /mob/living/silicon/robot/model
-	var/set_model = /obj/item/robot_model
+	var/obj/item/robot_model/set_model = /obj/item/robot_model
 
 /mob/living/silicon/robot/model/Initialize(mapload)
 	. = ..()
-	INVOKE_ASYNC(model, TYPE_PROC_REF(/obj/item/robot_model, transform_to), set_model, TRUE)
+	INVOKE_ASYNC(src, PROC_REF(apply_model), set_model)
+	INVOKE_ASYNC(src, PROC_REF(apply_skin), set_model.default_skin)
 
 /mob/living/silicon/robot/model/clown
 	set_model = /obj/item/robot_model/clown

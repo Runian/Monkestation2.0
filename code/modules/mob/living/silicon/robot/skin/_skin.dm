@@ -13,7 +13,7 @@
 	var/icon_state_light = "robot"
 	/// The icon state of the sprite's transformation animation.
 	var/icon_state_transform = null
-	/// The amount of deciseconds it takes for the icon state that is transformation animation to fully complete.
+	/// The amount of deciseconds it takes for the icon state that is transformation animation to complete.
 	var/transformation_duration = 3 SECONDS
 	/// The icon of the chat bubble.
 	var/bubble_icon = "robot"
@@ -32,6 +32,7 @@
 	/// The traits that are given when using this skin.
 	var/list/traits = list()
 
+/// Performs the transformation animation, if there is any.
 /datum/robot_skin/proc/do_transformation_animation(mob/living/silicon/robot/cyborg_target, should_immobilize = TRUE)
 	if(HAS_TRAIT(cyborg_target, TRAIT_NO_TRANSFORM))
 		return FALSE
@@ -42,27 +43,33 @@
 	if(icon_state_transform)
 		cyborg_target.setDir(SOUTH)
 		flick(icon_state_transform, cyborg_target)
+	INVOKE_ASYNC(src, PROC_REF(play_transformation_sounds), cyborg_target)
+	if(!transformation_duration) // No need to immobilize if our transformation is instant.
+		return TRUE
 	if(should_immobilize)
 		cyborg_target.SetLockdown(TRUE)
 		cyborg_target.set_anchored(TRUE)
 	INVOKE_ASYNC(src, PROC_REF(play_transformation_sounds), cyborg_target)
-	addtimer(CALLBACK(src, PROC_REF(end_transformation_animation), should_immobilize), transformation_duration)
+	INVOKE_ASYNC(src, PROC_REF(end_transformation_animation), cyborg_target, should_immobilize, transformation_duration) // This works. Timers don't work. Why? I don't know.
 	return TRUE
 
-/datum/robot_skin/proc/end_transformation_animation(mob/living/silicon/robot/cyborg_target, should_undo_immobilize = TRUE)
+/// Ends the transformation animation.
+/datum/robot_skin/proc/end_transformation_animation(mob/living/silicon/robot/cyborg_target, should_undo_immobilize = TRUE, transformation_duration)
+	if(transformation_duration)
+		sleep(transformation_duration)
 	if(QDELETED(cyborg_target) || !HAS_TRAIT_FROM(cyborg_target, TRAIT_NO_TRANSFORM, REF(src)))
 		return
 	REMOVE_TRAIT(cyborg_target, TRAIT_NO_TRANSFORM, REF(src))
 	if(should_undo_immobilize)
-		SetLockdown(FALSE)
-		set_anchored(FALSE)
-	updatehealth()
-	update_icons()
+		cyborg_target.SetLockdown(FALSE)
+		cyborg_target.set_anchored(FALSE)
+	cyborg_target.updatehealth()
+	cyborg_target.update_icons()
 
 /// Play the sounds associated with the transformation.
 /datum/robot_skin/proc/play_transformation_sounds(mob/living/silicon/robot/cyborg_target, intervals = 4, time_between = 0.7 SECONDS)
-	if(QDELETED(cyborg_target) || !intervals)
-		return
-	playsound(cyborg_target, pick('sound/items/drill_use.ogg', 'sound/items/jaws_cut.ogg', 'sound/items/jaws_pry.ogg', 'sound/items/welder.ogg', 'sound/items/ratchet.ogg'), 80, TRUE, -1)
-	sleep(time_between)
-	play_transformation_sounds(cyborg_target, intervals - 1, time_between)
+	for(var/i in 1 to intervals)
+		if(QDELETED(cyborg_target))
+			return
+		playsound(cyborg_target, pick('sound/items/drill_use.ogg', 'sound/items/jaws_cut.ogg', 'sound/items/jaws_pry.ogg', 'sound/items/welder.ogg', 'sound/items/ratchet.ogg'), 80, TRUE, -1)
+		sleep(time_between)

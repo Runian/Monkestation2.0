@@ -105,7 +105,7 @@
 	src.user = user
 	savedName = user.name
 	user.name = friendlyName
-	user.model.cyborg_base_icon = initial(disguise_model_type.cyborg_base_icon)
+	user.apply_skin(disguise_model_type.default_skin)
 	user.model.name = initial(disguise_model_type.name)
 	user.bubble_icon = "robot"
 	active = TRUE
@@ -125,9 +125,9 @@
 		listeningTo = null
 	do_sparks(5, FALSE, user)
 	user.name = savedName
-	user.model.cyborg_base_icon = initial(user.model.cyborg_base_icon)
+	var/obj/item/robot_model/initial_model_typepath = initial(user.model)
+	user.apply_skin(initial(initial_model_typepath.default_skin))
 	user.model.name = initial(user.model.name)
-	user.bubble_icon = "syndibot"
 	active = FALSE
 	user.update_icons()
 	src.user = user

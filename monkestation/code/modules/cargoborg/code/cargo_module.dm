@@ -1,6 +1,12 @@
 // CARGO
 /obj/item/robot_model/cargo
 	name = "Cargo"
+	default_skin = /datum/robot_skin/cargo/default
+	available_skins = list(
+		/datum/robot_skin/cargo/default,
+		/datum/robot_skin/cargo/zoomba,
+		/datum/robot_skin/cargo/kerfus
+	)
 	basic_modules = list(
 		/obj/item/stamp,
 		/obj/item/stamp/denied,
@@ -25,25 +31,5 @@
 		/obj/item/stamp/chameleon,
 		/obj/item/borg/paperplane_crossbow,
 	)
-	hat_offset = 0
-	badge_offset = 0
-	cyborg_base_icon = "cargo"
 	model_select_icon = "cargo"
 	canDispose = TRUE
-	borg_skins = list(
-		"Technician" = list(
-			SKIN_ICON_STATE = "cargoborg",
-			SKIN_ICON = CYBORG_ICON_CARGO,
-		),
-		"Zoomba" = list(
-			SKIN_ICON_STATE = "zoomba_cargo",
-			SKIN_ICON = CYBORG_ICON_CARGO,
-			SKIN_BADGE_OFFSET = -9,
-		),
-		"Kerfus" = list(
-			SKIN_ICON_STATE = "kerfus_cargo",
-			SKIN_LIGHT_KEY = NONE, SKIN_ICON = CYBORG_ICON_CARGO,
-			SKIN_TRAITS = list(TRAIT_CAT),
-			SKIN_BADGE_OFFSET = -6,
-		),
-	)

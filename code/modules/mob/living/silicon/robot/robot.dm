@@ -97,6 +97,8 @@
 	alert_control.listener.RegisterSignal(src, COMSIG_LIVING_DEATH, TYPE_PROC_REF(/datum/alarm_listener, prevent_alarm_changes))
 	alert_control.listener.RegisterSignal(src, COMSIG_LIVING_REVIVE, TYPE_PROC_REF(/datum/alarm_listener, allow_alarm_changes))
 
+	apply_skin(skin, FALSE, FALSE)
+
 /mob/living/silicon/robot/set_suicide(suicide_state)
 	. = ..()
 	if(mmi)
@@ -154,27 +156,15 @@
 	return cell
 
 /mob/living/silicon/robot/proc/pick_model()
-	if(model.type != /obj/item/robot_model)
+	if(has_model())
 		return
-
 	if(wires.is_cut(WIRE_RESET_MODEL))
 		to_chat(src,span_userdanger("ERROR: Model installer reply timeout. Please check internal connections."))
 		return
-
 	if(lockcharge == TRUE)
 		to_chat(src,span_userdanger("ERROR: Lockdown is engaged. Please disengage lockdown to pick module."))
 		return
-
-	//monkestation edit start
-	initialize_cyborg_model_lists()
-
-	// Create radial menu for choosing borg model
-	var/input_model = show_radial_menu(src, src, GLOB.cyborg_base_models_icon_list, radius = 42)
-	if(!input_model || model.type != /obj/item/robot_model)
-		return
-
-	model.transform_to(GLOB.cyborg_model_list[input_model])
-	//monkestation edit end
+	prompt_full_transformation()
 
 /// Used to setup the a basic and (somewhat) unique name for the robot.
 /mob/living/silicon/robot/proc/setup_default_name()
@@ -282,35 +272,35 @@
 		if(!eye_lights)
 			eye_lights = new()
 		if(lamp_enabled || lamp_doom)
-			eye_lights.icon_state = "[model.special_light_key ? "[model.special_light_key]" : "[model.cyborg_base_icon]"]_l"
+			eye_lights.icon_state = "[skin.icon_state_light]_l"
 			eye_lights.color = lamp_doom ? COLOR_RED : lamp_color
 			set_light_range(max(MINIMUM_USEFUL_LIGHT_RANGE, lamp_intensity))
 			set_light_color(lamp_doom ? COLOR_RED : lamp_color) //Red for doomsday killborgs, borg's choice otherwise
 			SET_PLANE_EXPLICIT(eye_lights, ABOVE_LIGHTING_PLANE, src) //glowy eyes
 		else
-			eye_lights.icon_state = "[model.special_light_key ? "[model.special_light_key]":"[model.cyborg_base_icon]"]_e"
+			eye_lights.icon_state = "[skin.icon_state_light]_e"
 			eye_lights.color = COLOR_WHITE
 			SET_PLANE_EXPLICIT(eye_lights, ABOVE_GAME_PLANE, src)
 		eye_lights.icon = icon
 		. += eye_lights
 	if(opened)
 		if(wiresexposed)
-			. += "ov-opencover +w"
+			. += "[skin.icon_state_cover]-opencover +w"
 		else if(cell)
-			. += "ov-opencover +c"
+			. += "[skin.icon_state_cover]-opencover +c"
 		else
-			. += "ov-opencover -c"
-	if(hat)
+			. += "[skin.icon_state_cover]-opencover -c"
+	if(hat && !isnull(skin.hat_offset))
 		var/mutable_appearance/head_overlay = hat.build_worn_icon(default_layer = 20, default_icon_file = 'icons/mob/clothing/head/default.dmi')
-		head_overlay.pixel_z += model.hat_offset
+		head_overlay.pixel_z += skin.hat_offset
 		. += head_overlay
-	if(worn_badge)
+	if(worn_badge && !isnull(skin.badge_offset))
 		var/mutable_appearance/accessory_overlay = mutable_appearance(worn_badge.worn_icon, worn_badge.icon_state)
-		accessory_overlay.pixel_z += model.badge_offset
+		accessory_overlay.pixel_z += skin.badge_offset
 		. += accessory_overlay
 
 /mob/living/silicon/robot/update_icons()
-	icon_state = model.cyborg_base_icon
+	icon_state = skin.icon_state
 	update_appearance(UPDATE_OVERLAYS)
 
 /mob/living/silicon/robot/on_changed_z_level(turf/old_turf, turf/new_turf, same_z_layer, notify_contents)
@@ -695,7 +685,8 @@
 		update_transform(0.5)
 	logevent("Chassis model has been reset.")
 	log_silicon("CYBORG: [key_name(src)] has reset their cyborg model.")
-	model.transform_to(/obj/item/robot_model)
+	apply_model(/obj/item/robot_model)
+	apply_skin(model.default_skin)
 
 	// Remove upgrades.
 	for(var/obj/item/borg/upgrade/I in upgrades)
@@ -711,18 +702,6 @@
 		. = FALSE
 	else
 		. = TRUE
-
-/mob/living/silicon/robot/proc/update_module_innate()
-	designation = model.name
-	if(hands)
-		hands.icon_state = model.model_select_icon
-
-	REMOVE_TRAITS_IN(src, MODEL_TRAIT)
-	if(length(model.model_traits))
-		add_traits(model.model_traits, MODEL_TRAIT)
-
-	INVOKE_ASYNC(src, PROC_REF(updatename))
-
 
 /mob/living/silicon/robot/proc/place_on_head(obj/item/new_hat)
 	if(hat)
@@ -1035,3 +1014,108 @@
 		unbuckle_mob(buckled_mob)
 	do_sparks(5, 0, src)
 
+/// Prompts the cyborg with what model/skin that they want and applies the changes.
+/mob/living/silicon/robot/proc/prompt_full_transformation()
+	var/obj/item/robot_model/chosen_robot_model = prompt_model_selection()
+	if(!chosen_robot_model)
+		return FALSE
+	var/datum/robot_skin/chosen_robot_skin = prompt_skin_selection(chosen_robot_model)
+	if(!chosen_robot_skin)
+		return FALSE
+	apply_model(chosen_robot_model)
+	apply_skin(chosen_robot_skin)
+	return TRUE
+
+/// Prompts the cyborg with a radial wheel to pick a model that they want.
+/mob/living/silicon/robot/proc/prompt_model_selection()
+	initialize_cyborg_model_lists()
+	var/input_model = show_radial_menu(src, src, GLOB.cyborg_base_models_icon_list, custom_check = CALLBACK(src, PROC_REF(check_menu), src), radius = 42, require_near = TRUE)
+	if(!input_model)
+		return FALSE
+	var/obj/item/robot_model/picked_robot_model = GLOB.cyborg_model_list[input_model]
+	if(!picked_robot_model)
+		return FALSE
+	return picked_robot_model
+
+/// Prompts the cyborg with a radial wheel to pick a skin that they want.
+/mob/living/silicon/robot/proc/prompt_skin_selection(obj/item/robot_model/robot_model_typepath)
+	var/obj/item/robot_model/temporary_robot_model = new robot_model_typepath(src) // We just want one of its list.
+	var/list/reskin_icons = list()
+	for(var/datum/robot_skin/robot_skin as anything in temporary_robot_model.available_skins)
+		reskin_icons[robot_skin] = image(icon = robot_skin.icon, icon_state = robot_skin.icon_state)
+	var/datum/robot_skin/picked_robot_skin = show_radial_menu(src, src, reskin_icons, custom_check = CALLBACK(src, PROC_REF(check_menu), src), radius = 42, require_near = TRUE)
+	. = picked_robot_skin
+	qdel(temporary_robot_model)
+
+// Checks if we are allowed to interact with the model/skin radial menu
+/mob/living/silicon/robot/proc/check_menu(mob/living/silicon/robot/user)
+	if(!istype(user))
+		return FALSE
+	if(user.incapacitated())
+		return FALSE
+	return TRUE
+
+/// Applies a model to the cyborg.
+/mob/living/silicon/robot/proc/apply_model(obj/item/robot_model/new_robot_model, should_notify_ai = TRUE)
+	// Drops all of the items that may be stored by the cyborg.
+	for(var/obj/item/storage/bag in model.get_usable_modules())
+		for(var/obj/item in bag)
+			item.forceMove(drop_location())
+	// Upgrades don't work if there is a new model now.
+	for(var/obj/item/borg/upgrade/upgrade_item in upgrades)
+		upgrade_item.forceMove(get_turf(src))
+
+	REMOVE_TRAITS_IN(src, CYBORG_MODEL_TRAIT)
+	if(!ispath(model))
+		qdel(model)
+	model = new new_robot_model(src)
+	model.rebuild_modules()
+	if(length(model.model_traits))
+		add_traits(model.model_traits, CYBORG_MODEL_TRAIT)
+
+	designation = model.name
+	if(hands)
+		hands.icon_state = model.model_select_icon
+
+	radio.recalculateChannels()
+	set_modularInterface_theme()
+	diag_hud_set_health()
+	diag_hud_set_status()
+	diag_hud_set_borgcell()
+	diag_hud_set_aishell()
+
+	log_silicon("CYBORG: [key_name(src)] has transformed into the [model.name] model.")
+	logevent("Chassis model has been set to [name].")
+	if(should_notify_ai)
+		notify_ai(AI_NOTIFICATION_NEW_MODEL)
+	SSblackbox.record_feedback("tally", "cyborg_modules", 1, model) // Someone should really change this to "cyborg_models" at some point.
+	INVOKE_ASYNC(src, PROC_REF(updatename))
+
+/// Applies a skin to the cyborg.
+/mob/living/silicon/robot/proc/apply_skin(datum/robot_skin/new_skin, perform_animation = TRUE, locks_animation = TRUE)
+	REMOVE_TRAITS_IN(src, CYBORG_SKIN_TRAIT)
+	if(ispath(new_skin))
+		new_skin = new new_skin()
+	if(!ispath(skin))
+		qdel(skin)
+	skin = new_skin
+	icon = skin.icon
+	icon_state = skin.icon_state
+	base_pixel_x = skin.base_pixel_x
+	base_pixel_y = skin.base_pixel_y
+	if(hat && isnull(skin.hat_offset))
+		var/obj/item/removed_hat = hat
+		removed_hat.forceMove(drop_location())
+		if(HAS_TRAIT(removed_hat, TRAIT_NODROP))
+			QDEL_NULL(removed_hat)
+	if(worn_badge && isnull(skin.badge_offset))
+		var/obj/item/clothing/accessory/badge/removed_badge = worn_badge
+		removed_badge.forceMove(drop_location())
+		if(HAS_TRAIT(removed_badge, TRAIT_NODROP))
+			QDEL_NULL(removed_badge)
+	if(islist(skin.traits))
+		add_traits(skin.traits, CYBORG_SKIN_TRAIT)
+	update_icons()
+	if(perform_animation)
+		skin.do_transformation_animation(src, locks_animation)
+	return skin

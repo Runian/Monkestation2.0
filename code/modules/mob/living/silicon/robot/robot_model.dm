@@ -17,12 +17,12 @@
 	flags_1 = CONDUCT_1
 	///Host of this model
 	var/mob/living/silicon/robot/robot
+	/// The default skin to use.
+	var/datum/robot_skin/default_skin = /datum/robot_skin/standard/default
+	/// The list of all skins.
+	var/list/datum/robot_skin/available_skins
 	///Icon of the module selection screen
 	var/model_select_icon = "nomod"
-	///Produces the icon for the borg and, if no special_light_key is set, the lights
-	var/cyborg_base_icon = "robot"
-	///If we want specific lights, use this instead of copying lights in the dmi
-	var/special_light_key
 	///Holds all the usable modules (tools)
 	var/list/modules = list()
 	///Paths of modules to be created when the model is created
@@ -45,21 +45,12 @@
 	var/allow_riding = TRUE
 	///Whether the borg can stuff itself into disposals
 	var/canDispose = FALSE
-	///The y offset of the hat worn on our head.
-	var/hat_offset = -3
-	///The y offset of the badge we're decorated with.
-	var/badge_offset = -3
-	///The x offsets of a person riding the borg
-	var/list/ride_offset_x = list("north" = 0, "south" = 0, "east" = -6, "west" = 6)
-	///The y offsets of a person riding the borg
-	var/list/ride_offset_y = list("north" = 4, "south" = 4, "east" = 3, "west" = 3)
-	///List of skins the borg can be reskinned to, optional
-	var/list/borg_skins
 	/// Weakref to the ability that toggles their sight vision, if any.
 	var/datum/weakref/sight_vision_ref
 
 /obj/item/robot_model/Initialize(mapload)
 	. = ..()
+	LAZYOR(available_skins, default_skin)
 	robot = loc
 	create_storage(storage_type = /datum/storage/cyborg_internal_storage)
 	// src is what we store items visible to borgs, we'll store things in the bot itself otherwise.
@@ -233,99 +224,6 @@
 		module.emp_act(severity)
 	..()
 
-/obj/item/robot_model/proc/transform_to(new_config_type, forced = FALSE)
-	var/mob/living/silicon/robot/cyborg = loc
-	var/obj/item/robot_model/new_model = new new_config_type(cyborg)
-	cyborg.icon = 'icons/mob/silicon/robots.dmi' //reset our icon to default, but before a new custom icon may be applied by be_transformed_to
-	if(!new_model.be_transformed_to(src, forced))
-		if(!cyborg.client)
-			cyborg.pending_model = new_config_type
-		qdel(new_model)
-		return
-	cyborg.model = new_model
-	cyborg.update_module_innate()
-	new_model.rebuild_modules()
-	cyborg.radio.recalculateChannels()
-	cyborg.set_modularInterface_theme()
-	cyborg.diag_hud_set_health()
-	cyborg.diag_hud_set_status()
-	cyborg.diag_hud_set_borgcell()
-	cyborg.diag_hud_set_aishell()
-	cyborg.update_icons()
-	log_silicon("CYBORG: [key_name(cyborg)] has transformed into the [new_model] model.")
-
-	INVOKE_ASYNC(new_model, PROC_REF(do_transform_animation))
-	qdel(src)
-	return new_model
-
-/obj/item/robot_model/proc/be_transformed_to(obj/item/robot_model/old_model, forced = FALSE)
-	if(HAS_TRAIT(robot, TRAIT_NO_TRANSFORM))
-		robot.balloon_alert(robot, "can't transform right now!")
-		return FALSE
-	if(islist(borg_skins) && !forced)
-		var/mob/living/silicon/robot/cyborg = loc
-		var/list/reskin_icons = list()
-		for(var/skin in borg_skins)
-			var/list/details = borg_skins[skin]
-			reskin_icons[skin] = image(icon = details[SKIN_ICON] || 'icons/mob/silicon/robots.dmi', icon_state = details[SKIN_ICON_STATE])
-		var/borg_skin = show_radial_menu(cyborg, cyborg, reskin_icons, custom_check = CALLBACK(src, PROC_REF(check_menu), cyborg, old_model), radius = 38, require_near = TRUE)
-		if(!borg_skin)
-			return FALSE
-		var/list/details = borg_skins[borg_skin]
-		if(!isnull(details[SKIN_ICON_STATE]))
-			cyborg_base_icon = details[SKIN_ICON_STATE]
-		if(!isnull(details[SKIN_ICON]))
-			cyborg.icon = details[SKIN_ICON]
-			cyborg.base_pixel_x = details[SKIN_PIXEL_X]
-		if(!isnull(details[SKIN_PIXEL_Y]))
-			cyborg.base_pixel_y = details[SKIN_PIXEL_Y]
-		if(!isnull(details[SKIN_LIGHT_KEY]))
-			special_light_key = details[SKIN_LIGHT_KEY]
-		if(!isnull(details[SKIN_HAT_OFFSET]))
-			hat_offset = details[SKIN_HAT_OFFSET]
-		if(!isnull(details[SKIN_BADGE_OFFSET]))
-			badge_offset = details[SKIN_BADGE_OFFSET]
-		if(!isnull(details[SKIN_TRAITS]))
-			model_traits += details[SKIN_TRAITS]
-	for(var/i in old_model.added_modules)
-		added_modules += i
-		old_model.added_modules -= i
-	return TRUE
-
-/obj/item/robot_model/proc/do_transform_animation()
-	var/mob/living/silicon/robot/cyborg = loc
-	if(cyborg.hat)
-		cyborg.hat.forceMove(drop_location())
-	if(cyborg.worn_badge)
-		cyborg.worn_badge.forceMove(drop_location())
-
-	cyborg.cut_overlays()
-	LAZYNULL(cyborg.managed_overlays) // Or else our overlays won't get re-added (since we are likely to have exact same overlays).
-	cyborg.setDir(SOUTH)
-	do_transform_delay()
-
-/obj/item/robot_model/proc/do_transform_delay()
-	var/mob/living/silicon/robot/cyborg = loc
-	sleep(0.1 SECONDS)
-	flick("[cyborg_base_icon]_transform", cyborg)
-	ADD_TRAIT(cyborg, TRAIT_NO_TRANSFORM, REF(src))
-	if(locked_transform)
-		cyborg.SetLockdown(TRUE)
-		cyborg.set_anchored(TRUE)
-	cyborg.logevent("Chassis model has been set to [name].")
-	sleep(0.1 SECONDS)
-	for(var/i in 1 to 4)
-		playsound(cyborg, pick('sound/items/drill_use.ogg', 'sound/items/jaws_cut.ogg', 'sound/items/jaws_pry.ogg', 'sound/items/welder.ogg', 'sound/items/ratchet.ogg'), 80, TRUE, -1)
-		sleep(0.7 SECONDS)
-	cyborg.SetLockdown(FALSE)
-	cyborg.setDir(SOUTH)
-	cyborg.set_anchored(FALSE)
-	REMOVE_TRAIT(cyborg, TRAIT_NO_TRANSFORM, REF(src))
-	cyborg.updatehealth()
-	cyborg.update_icons()
-	cyborg.notify_ai(AI_NOTIFICATION_NEW_MODEL)
-	SSblackbox.record_feedback("tally", "cyborg_modules", 1, cyborg.model)
-
 /**
  * Checks if we are allowed to interact with a radial menu
  *
@@ -342,8 +240,13 @@
 		return FALSE
 	return TRUE
 
+/// Called whenever this model was successfully applied to a cyborg.
+/obj/item/robot_model/proc/on_gain()
+	return
+
 /obj/item/robot_model/clown
 	name = "Clown"
+	default_skin = /datum/robot_skin/clown/default
 	basic_modules = list(
 		/obj/item/assembly/flash/cyborg,
 		/obj/item/toy/crayon/rainbow,
@@ -368,9 +271,6 @@
 		/obj/item/reagent_containers/spray/waterflower/cyborg/hacked,
 	)
 	model_select_icon = "service"
-	cyborg_base_icon = "clown"
-	hat_offset = -2
-	badge_offset = -2
 
 /obj/item/robot_model/clown/respawn_consumable(mob/living/silicon/robot/cyborg, coeff = 1)
 	. = ..()
@@ -382,6 +282,7 @@
 
 /obj/item/robot_model/engineering
 	name = "Engineering"
+	default_skin = /datum/robot_skin/engineering/default
 	basic_modules = list(
 		/obj/item/assembly/flash/cyborg,
 		/obj/item/construction/rcd/borg,
@@ -410,11 +311,8 @@
 	emag_modules = list(
 		/obj/item/borg/stun,
 	)
-	cyborg_base_icon = "engineer"
 	model_select_icon = "engineer"
 	model_traits = list(TRAIT_NEGATES_GRAVITY, TRAIT_KNOW_ENGI_WIRES, TRAIT_KNOW_ROBO_WIRES)
-	hat_offset = -4
-	badge_offset = -4
 
 /obj/item/robot_model/engineering/respawn_consumable(mob/living/silicon/robot/cyborg, coeff = 1)
 	..()
@@ -423,11 +321,8 @@
 		for(var/charge in 1 to coeff)
 			light_replacer.Charge(cyborg)
 
-/obj/item/robot_model/engineering/be_transformed_to(obj/item/robot_model/old_model, forced = FALSE)
+/obj/item/robot_model/engineering/on_gain()
 	var/datum/action/cooldown/borg_sight_vision/sight_vision_meson = new(loc)
-	. = ..()
-	if(!.)
-		return
 	sight_vision_meson.Grant(loc)
 	sight_vision_ref = WEAKREF(sight_vision_meson)
 
@@ -466,6 +361,7 @@
 
 /obj/item/robot_model/standard
 	name = "Standard"
+	default_skin = /datum/robot_skin/standard/default
 	basic_modules = list(
 		/obj/item/assembly/flash/cyborg,
 		/obj/item/reagent_containers/borghypo/epi, // Buffed slightly by letting them dispense salglu. Can help humans better at the cost of a smaller welding tank so they can't just heal all the time. Feels more in line with what's expectted of borgs nowdays.
@@ -486,15 +382,12 @@
 	emag_modules = list(
 		/obj/item/melee/energy/sword/cyborg, //I don't think there was any reason to use cyborg specific esword with this? They both act functionally the same.
 	)
-	cyborg_base_icon = "robot"
 	model_select_icon = "standard"
 	model_traits = list(TRAIT_NEGATES_GRAVITY)
-	hat_offset = -3
-	badge_offset = -3
-
 
 /obj/item/robot_model/janitor
 	name = "Janitor"
+	default_skin = /datum/robot_skin/janitor/default
 	basic_modules = list(
 		/obj/item/assembly/flash/cyborg,
 		/obj/item/screwdriver/cyborg,
@@ -517,19 +410,13 @@
 	emag_modules = list(
 		/obj/item/reagent_containers/spray/cyborg_lube,
 	)
-	cyborg_base_icon = "janitor"
 	model_select_icon = "janitor"
-	hat_offset = -5
-	badge_offset = -2
-	/// Weakref to the wash toggle action we own
+	/// Weakref to the wash toggle action we own.
 	var/datum/weakref/wash_toggle_ref
 
-/obj/item/robot_model/janitor/be_transformed_to(obj/item/robot_model/old_model, forced = FALSE)
-	. = ..()
-	if(!.)
-		return
-	var/datum/action/wash_toggle = new /datum/action/toggle_buffer(loc)
-	wash_toggle.Grant(loc)
+/obj/item/robot_model/janitor/on_gain()
+	var/datum/action/wash_toggle = new /datum/action/toggle_buffer(robot)
+	wash_toggle.Grant(robot)
 	wash_toggle_ref = WEAKREF(wash_toggle)
 
 /obj/item/robot_model/janitor/Destroy()
@@ -757,6 +644,7 @@
 
 /obj/item/robot_model/medical
 	name = "Medical"
+	default_skin = /datum/robot_skin/medical/default
 	basic_modules = list(
 		/obj/item/assembly/flash/cyborg,
 		/obj/item/healthanalyzer/cyborg, //MONKESTATION EDIT
@@ -780,18 +668,12 @@
 	emag_modules = list(
 		/obj/item/reagent_containers/borghypo/medical/hacked,
 	)
-	cyborg_base_icon = "medical"
 	model_select_icon = "medical"
 	model_traits = list(TRAIT_PUSHIMMUNE)
-	hat_offset = 3
-	badge_offset = 0
-	borg_skins = list(
-		"Machinified Doctor" = list(SKIN_ICON_STATE = "medical"),
-		"Qualified Doctor" = list(SKIN_ICON_STATE = "qualified_doctor"),
-	)
 
 /obj/item/robot_model/miner
 	name = "Miner"
+	default_skin = /datum/robot_skin/miner/default
 	basic_modules = list(
 		/obj/item/assembly/flash/cyborg,
 		/obj/item/t_scanner/adv_mining_scanner/cyborg,
@@ -811,22 +693,11 @@
 	emag_modules = list(
 		/obj/item/borg/stun,
 	)
-	cyborg_base_icon = "miner"
 	model_select_icon = "miner"
-	hat_offset = 0
-	badge_offset = -2
-	borg_skins = list(
-		"Asteroid Miner" = list(SKIN_ICON_STATE = "minerOLD"),
-		"Spider Miner" = list(SKIN_ICON_STATE = "spidermin", SKIN_BADGE_OFFSET = -8),
-		"Lavaland Miner" = list(SKIN_ICON_STATE = "miner"),
-	)
 	/// Reference to the energy shield action.
 	var/datum/weakref/energy_shield_ref
 
-/obj/item/robot_model/miner/be_transformed_to(obj/item/robot_model/old_model, forced = FALSE)
-	. = ..()
-	if(!.)
-		return
+/obj/item/robot_model/miner/on_gain(obj/item/robot_model/old_model, forced = FALSE)
 	var/datum/action/cooldown/borg_sight_vision/sight_vision_meson = new(loc)
 	sight_vision_meson.Grant(loc)
 	sight_vision_ref = WEAKREF(sight_vision_meson)
@@ -873,6 +744,7 @@
 
 /obj/item/robot_model/peacekeeper
 	name = "Peacekeeper"
+	default_skin = /datum/robot_skin/peacekeeper/default
 	basic_modules = list(
 		/obj/item/assembly/flash/cyborg,
 		/obj/item/rsf/cookiesynth,
@@ -886,19 +758,16 @@
 	emag_modules = list(
 		/obj/item/reagent_containers/borghypo/peace/hacked,
 	)
-	cyborg_base_icon = "peace"
 	model_select_icon = "standard"
 	model_traits = list(TRAIT_PUSHIMMUNE)
-	hat_offset = -2
-	badge_offset = -2
 
-/obj/item/robot_model/peacekeeper/do_transform_animation()
-	..()
-	to_chat(loc, "<span class='userdanger'>You are an Enforcer and Upholder of your active lawset. \
+/obj/item/robot_model/peacekeeper/on_gain()
+	to_chat(robot, "<span class='userdanger'>You are an Enforcer and Upholder of your active lawset. \
 	You are not a security member and you are expected to follow orders and prevent harm above all else. Space law means nothing to you.</span>")
 
 /obj/item/robot_model/security
 	name = "Security"
+	default_skin = /datum/robot_skin/security/default
 	basic_modules = list(
 		/obj/item/assembly/flash/cyborg,
 		/obj/item/restraints/handcuffs/cable/zipties,
@@ -911,14 +780,10 @@
 	emag_modules = list(
 		/obj/item/gun/energy/laser/cyborg,
 	)
-	cyborg_base_icon = "sec"
 	model_select_icon = "security"
 	model_traits = list(TRAIT_PUSHIMMUNE)
-	hat_offset = 3
-	badge_offset = -3
 
-/obj/item/robot_model/security/do_transform_animation()
-	..()
+/obj/item/robot_model/security/on_gain()
 	to_chat(loc, "<span class='userdanger'>While you have picked the security model, you still have to follow your laws, NOT Space Law. \
 	For Asimov, this means you must follow criminals' orders unless there is a law 1 reason not to.</span>")
 
@@ -935,6 +800,15 @@
 
 /obj/item/robot_model/service
 	name = "Service"
+	default_skin = /datum/robot_skin/service/default
+	available_skins = list(
+		/datum/robot_skin/service/default,
+		/datum/robot_skin/service/bro,
+		/datum/robot_skin/service/kent,
+		/datum/robot_skin/service/tophat,
+		/datum/robot_skin/service/waitress,
+		/datum/robot_skin/service/kerfus
+	)
 	basic_modules = list(
 		/obj/item/assembly/flash/cyborg,
 		// Monkestation edit start: Cooking
@@ -976,24 +850,7 @@
 	emag_modules = list(
 		/obj/item/reagent_containers/borghypo/borgshaker/hacked,
 	)
-	cyborg_base_icon = "service_m" // display as butlerborg for radial model selection
 	model_select_icon = "service"
-	special_light_key = "service"
-	hat_offset = 0
-	borg_skins = list(
-		"Bro" = list(SKIN_ICON_STATE = "brobot"),
-		"Butler" = list(SKIN_ICON_STATE = "service_m"),
-		"Kent" = list(SKIN_ICON_STATE = "kent", SKIN_LIGHT_KEY = "medical", SKIN_HAT_OFFSET = 3),
-		"Tophat" = list(SKIN_ICON_STATE = "tophat", SKIN_LIGHT_KEY = NONE, SKIN_HAT_OFFSET = INFINITY),
-		"Waitress" = list(SKIN_ICON_STATE = "service_f"),
-		"Kerfus" = list(
-			SKIN_ICON_STATE = "kerfus_service",
-			SKIN_LIGHT_KEY = NONE,
-			SKIN_ICON = CYBORG_ICON_CARGO,
-			SKIN_TRAITS = list(TRAIT_CAT),
-			SKIN_BADGE_OFFSET = -6,
-		),
-	)
 
 /obj/item/robot_model/service/respawn_consumable(mob/living/silicon/robot/cyborg, coeff = 1)
 	..()
@@ -1002,7 +859,7 @@
 		enzyme.reagents.add_reagent(/datum/reagent/consumable/enzyme, 2 * coeff)
 
 //MONKESTATION ADDITION - lets service borgs craft
-/obj/item/robot_model/service/be_transformed_to(obj/item/robot_model/old_model)
+/obj/item/robot_model/service/on_gain(obj/item/robot_model/old_model)
 	. = ..()
 	var/mob/living/silicon/robot/cyborg = loc
 
@@ -1023,6 +880,7 @@
 
 /obj/item/robot_model/science
 	name = "Science"
+	default_skin = /datum/robot_skin/science/default
 	basic_modules = list(
 		/obj/item/assembly/flash/cyborg,
 		/obj/item/extinguisher/mini,
@@ -1048,31 +906,11 @@
 		/obj/item/borg/handheld_jaunter,
 	)
 	radio_channels = list(RADIO_CHANNEL_SCIENCE, RADIO_CHANNEL_SUPPLY)
-	cyborg_base_icon = "science"
 	model_select_icon = "science"
-	hat_offset = 3
-	badge_offset = 3
-	borg_skins = list(
-		"Science" = list(
-			SKIN_ICON_STATE = "science"
-		),
-		"Eyebot" = list(
-			SKIN_ICON_STATE = "science_eyebot",
-			SKIN_LIGHT_KEY = "science_eyebot",
-			SKIN_HAT_OFFSET = INFINITY,
-			SKIN_BADGE_OFFSET = INFINITY
-		),
-		"Drone" = list(
-			SKIN_ICON_STATE = "science_drone",
-			SKIN_ICON_STATE = "science_drone",
-			SKIN_HAT_OFFSET = INFINITY,
-			SKIN_BADGE_OFFSET = INFINITY
-		)
-	)
-
 
 /obj/item/robot_model/syndicate
 	name = "Syndicate Assault"
+	default_skin = /datum/robot_skin/syndicate/default
 	basic_modules = list(
 		/obj/item/assembly/flash/cyborg,
 		/obj/item/melee/energy/sword/cyborg,
@@ -1083,11 +921,8 @@
 		/obj/item/extinguisher/mini,
 		/obj/item/pinpointer/syndicate_cyborg,
 	)
-	cyborg_base_icon = "synd_sec"
 	model_select_icon = "malf"
 	model_traits = list(TRAIT_PUSHIMMUNE)
-	hat_offset = 3
-	badge_offset = -3
 
 /obj/item/robot_model/syndicate/rebuild_modules()
 	..()
@@ -1101,6 +936,7 @@
 
 /obj/item/robot_model/syndicate_medical
 	name = "Syndicate Medical"
+	default_skin = /datum/robot_skin/syndicate_medical/default
 	basic_modules = list(
 		/obj/item/assembly/flash/cyborg,
 		/obj/item/reagent_containers/borghypo/syndicate,
@@ -1118,13 +954,12 @@
 		/obj/item/gun/medbeam,
 		/obj/item/borg/apparatus/organ_storage,
 	)
-	cyborg_base_icon = "synd_medical"
 	model_select_icon = "malf"
 	model_traits = list(TRAIT_PUSHIMMUNE)
-	hat_offset = 3
 
 /obj/item/robot_model/saboteur
 	name = "Syndicate Saboteur"
+	default_skin = /datum/robot_skin/syndicate_saboteur/default
 	basic_modules = list(
 		/obj/item/assembly/flash/cyborg,
 		/obj/item/construction/rcd/borg/syndicate,
@@ -1149,14 +984,11 @@
 		/obj/item/card/emag,
 		/obj/item/borg/charger,
 	)
-	cyborg_base_icon = "synd_engi"
 	model_select_icon = "malf"
 	model_traits = list(TRAIT_PUSHIMMUNE, TRAIT_NEGATES_GRAVITY, TRAIT_KNOW_ENGI_WIRES, TRAIT_KNOW_ROBO_WIRES)
-	hat_offset = -4
-	badge_offset = -4
 	canDispose = TRUE
 
-/obj/item/robot_model/saboteur/be_transformed_to(obj/item/robot_model/old_model, forced = FALSE)
+/obj/item/robot_model/saboteur/on_gain(obj/item/robot_model/old_model, forced = FALSE)
 	. = ..()
 	if(!.)
 		return
@@ -1171,18 +1003,16 @@
 
 /obj/item/robot_model/syndicate/kiltborg
 	name = "Highlander"
+	default_skin = /datum/robot_skin/highlander/default
 	basic_modules = list(
 		/obj/item/claymore/highlander/robot,
 		/obj/item/pinpointer/nuke,
 	)
 	model_select_icon = "kilt"
-	cyborg_base_icon = "kilt"
-	hat_offset = -2
-	badge_offset = -2
 	breakable_modules = FALSE
 	locked_transform = FALSE //GO GO QUICKLY AND SLAUGHTER THEM ALL
 
-/obj/item/robot_model/syndicate/kiltborg/be_transformed_to(obj/item/robot_model/old_model)
+/obj/item/robot_model/syndicate/kiltborg/on_gain(obj/item/robot_model/old_model)
 	. = ..()
 	qdel(robot.radio)
 	robot.radio = new /obj/item/radio/borg/syndicate(robot)
@@ -1191,9 +1021,6 @@
 	robot.break_cyborg_slot(3) //YOU ONLY HAVE TWO ITEMS ANYWAY
 	var/obj/item/pinpointer/nuke/diskyfinder = locate(/obj/item/pinpointer/nuke) in basic_modules
 	diskyfinder.attack_self(robot)
-
-/obj/item/robot_model/syndicate/kiltborg/do_transform_delay() //AUTO-EQUIPPING THESE TOOLS ANY EARLIER CAUSES RUNTIMES OH YEAH
-	. = ..()
 	robot.put_in_hand(locate(/obj/item/claymore/highlander/robot) in basic_modules, 1)
 	robot.put_in_hand(locate(/obj/item/pinpointer/nuke) in basic_modules, 2)
 	robot.place_on_head(new /obj/item/clothing/head/beret/highlander(robot)) //THE ONLY PART MORE IMPORTANT THAN THE SWORD IS THE HAT
@@ -1202,6 +1029,11 @@
 //CENTCOM BORG!!!!
 /obj/item/robot_model/centcom
 	name = "CentCom"
+	default_skin = /datum/robot_skin/centcom/default
+	available_skins = list(
+		/datum/robot_skin/centcom/default,
+		/datum/robot_skin/centcom/kerfus
+	)
 	basic_modules = list(
 		/obj/item/assembly/flash/cyborg,
 		/obj/item/gun/energy/disabler/cyborg,
@@ -1227,20 +1059,7 @@
 		/obj/item/borg/apparatus/beaker/service,
 	)
 	radio_channels = list(RADIO_CHANNEL_CENTCOM)
-	cyborg_base_icon = "centcomborg"
 	model_select_icon = "service"
-	special_light_key = "centcomborg"
-	hat_offset = 3
-	badge_offset = -3
-	borg_skins = list(
-		"Standard" = list(SKIN_ICON_STATE = "centcomborg"),
-		"Kerfus" = list(
-			SKIN_ICON_STATE = "kerfus_centcom",
-			SKIN_LIGHT_KEY = NONE,
-			SKIN_TRAITS = list(TRAIT_CAT),
-			SKIN_BADGE_OFFSET = -6,
-		),
-	)
 
 /obj/item/robot_model/centcom/respawn_consumable(mob/living/silicon/robot/cyborg, coeff = 1)
 	..()
@@ -1253,7 +1072,7 @@
 	if(soap.uses < initial(soap.uses))
 		soap.uses += ROUND_UP(initial(soap.uses) / 100) * coeff
 
-/obj/item/robot_model/centcom/be_transformed_to(obj/item/robot_model/old_model)
+/obj/item/robot_model/centcom/on_gain(obj/item/robot_model/old_model)
 	. = ..()
 	var/mob/living/silicon/robot/cyborg = loc
 
