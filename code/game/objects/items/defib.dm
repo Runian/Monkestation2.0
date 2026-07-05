@@ -17,51 +17,56 @@
 	w_class = WEIGHT_CLASS_BULKY
 	actions_types = list(/datum/action/item_action/toggle_paddles)
 	armor_type = /datum/armor/item_defibrillator
-
-	var/obj/item/shockpaddles/paddle_type = /obj/item/shockpaddles
-	/// If the paddles are equipped (1) or on the defib (0)
-	var/on = FALSE
-	/// If you can zap people with the defibs on harm mode
+	/// The stock paddles that we are using. If this is a path, it will be created during initialization.
+	var/obj/item/shockpaddles/paddles = /obj/item/shockpaddles
+	/// Are the shock paddles currently held by someone?
+	var/being_used = FALSE
+	/// Can we zap people via disarm/harm mode?
 	var/safety = TRUE
-	/// If there's a cell in the defib with enough power for a revive, blocks paddles from reviving otherwise
-	var/powered = FALSE
-	/// If the cell can be removed via screwdriver
-	var/cell_removable = TRUE
-	var/obj/item/shockpaddles/paddles
-	var/obj/item/stock_parts/power_store/cell/cell
-	/// If true, revive through space suits, allow for combat shocking
+	/// Can we pierce through thick material?
+	var/piercing = FALSE
+	/// Does the same thing as safety and piercing combined.
 	var/combat = FALSE
-	/// How long does it take to recharge
+	/// The cell that we are using. If this is a path, it will be created using initialization.
+	var/obj/item/stock_parts/power_store/cell/cell
+	/// Do we have enough power to revive someone?
+	var/powered = FALSE
+	/// Can we remove our cell via a screwdriver?
+	var/cell_removable = TRUE
+	/// If not overridden by a signal, how long does it take between successful usages of the shock paddles?
 	var/cooldown_duration = 5 SECONDS
-	/// The icon state for the paddle overlay, not applied if null
+	/// Should we have an overlay that shows that the paddles are not being used? If so, what is the icon state of it?
 	var/paddle_state = "defibunit-paddles"
-	/// The icon state for the powered on overlay, not applied if null
+	/// Should we have an overlay that shows that we are powered? If so, what is the icon state of it?
 	var/powered_state = "defibunit-powered"
-	/// The icon state for the charge bar overlay, not applied if null
+	/// Should we have an overlay that shows the amount of charge remaining in the cell? If so, what is the icon state of it?
 	var/charge_state = "defibunit-charge"
-	/// The icon state for the missing cell overlay, not applied if null
+	/// Should we have an overlay that shows that we're missing a cell? If so, what is the icon state of it?
 	var/nocell_state = "defibunit-nocell"
-	/// The icon state for the emagged overlay, not applied if null
-	var/emagged_state = "defibunit-emagged"
+	/// Should we have an overlay that shows that the safety is off? If so, what is the icon state of it?
+	var/nosafety_state = "defibunit-emagged"
 
 /datum/armor/item_defibrillator
 	fire = 50
 	acid = 50
 
-/obj/item/defibrillator/get_cell()
-	return cell
-
 /obj/item/defibrillator/Initialize(mapload) //starts without a cell for rnd
 	. = ..()
-	paddles = new paddle_type(src)
+	if(ispath(paddles))
+		paddles = new paddles(src)
+	if(ispath(cell))
+		cell = new cell(src)
 	update_power()
 	RegisterSignal(paddles, COMSIG_DEFIBRILLATOR_SUCCESS, PROC_REF(on_defib_success))
 	AddElement(/datum/element/drag_pickup)
 
-/obj/item/defibrillator/loaded/Initialize(mapload) //starts with hicap
-	. = ..()
-	cell = new(src)
-	update_power()
+/obj/item/defibrillator/Destroy()
+	if(on)
+		var/M = get(paddles, /mob)
+		remove_paddles(M)
+	QDEL_NULL(paddles)
+	QDEL_NULL(cell)
+	return ..()
 
 /obj/item/defibrillator/examine(mob/user)
 	. = ..()
@@ -69,8 +74,11 @@
 		return
 	if(cell)
 		. += span_notice("Use a screwdriver to remove the cell.")
-	else
-		. += span_warning("It has no power cell!")
+		return
+	. += span_warning("It has no power cell!")
+
+/obj/item/defibrillator/get_cell()
+	return cell
 
 /obj/item/defibrillator/fire_act(exposed_temperature, exposed_volume)
 	. = ..()
@@ -97,18 +105,18 @@
 /obj/item/defibrillator/update_overlays()
 	. = ..()
 
-	if(!on && paddle_state)
+	if(!being_used && paddle_state)
 		. += paddle_state
 	if(powered && powered_state)
 		. += powered_state
 		if(!QDELETED(cell) && charge_state)
 			var/ratio = cell.charge / cell.maxcharge
-			ratio = CEILING(ratio*4, 1) * 25
+			ratio = CEILING(ratio * 4, 1) * 25
 			. += "[charge_state][ratio]"
 	if(!cell && nocell_state)
 		. += "[nocell_state]"
-	if(!safety && emagged_state)
-		. += emagged_state
+	if(!safety && nosafety_state)
+		. += nosafety_state
 
 /obj/item/defibrillator/CheckParts(list/parts_list)
 	..()
@@ -219,14 +227,6 @@
 		M.dropItemToGround(paddles, TRUE)
 	return
 
-/obj/item/defibrillator/Destroy()
-	if(on)
-		var/M = get(paddles, /mob)
-		remove_paddles(M)
-	QDEL_NULL(paddles)
-	QDEL_NULL(cell)
-	return ..()
-
 /obj/item/defibrillator/proc/deductcharge(chrgdeductamt)
 	if(cell)
 		if(cell.charge < (paddles.revivecost+chrgdeductamt))
@@ -259,6 +259,9 @@
 	cooldowncheck()
 	return COMPONENT_DEFIB_STOP
 
+/obj/item/defibrillator/loaded
+	cell = /obj/item/stock_parts/power_store/cell
+
 /obj/item/defibrillator/compact
 	name = "compact defibrillator"
 	desc = "A belt-equipped defibrillator that can be rapidly deployed."
@@ -273,10 +276,8 @@
 	nocell_state = "defibcompact-nocell"
 	emagged_state = "defibcompact-emagged"
 
-/obj/item/defibrillator/compact/loaded/Initialize(mapload)
-	. = ..()
-	cell = new(src)
-	update_power()
+/obj/item/defibrillator/compact/loaded
+	cell = /obj/item/stock_parts/power_store/cell
 
 /obj/item/defibrillator/compact/combat
 	name = "combat defibrillator"
