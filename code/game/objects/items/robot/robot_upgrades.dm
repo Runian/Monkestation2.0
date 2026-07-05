@@ -18,53 +18,108 @@
 	/// If true, requires the cyborg to have chosen a module.
 	var/require_model = FALSE
 	/// If true, will be deleted after usage and will not be stored in the cyborg.
-	var/one_use = FALSE
+	var/delete_on_use = FALSE
 	/// If true, allows duplicates of itself to exist within the cyborg.
 	var/allow_duplicates = FALSE
+	/// The cyborg that we have upgraded.
+	var/datum/weakref/cyborg_owner_weakref
 
-/obj/item/borg/upgrade/proc/action(mob/living/silicon/robot/borg, user = usr)
-	if(borg.stat == DEAD)
-		to_chat(user, span_warning("[src] will not function on a deceased cyborg!"))
+/obj/item/borg/upgrade/Destroy(force)
+	if(cyborg_owner_weakref)
+	return..()
+
+/// Checks if this upgrade can be installed into the cyborg.
+/obj/item/borg/upgrade/proc/can_install(mob/living/silicon/robot/cyborg, mob/living/carbon/human/user, silent = TRUE)
+	if(src in cyborg.upgrades)
 		return FALSE
-	if(model_type && !is_type_in_list(borg.model, model_type))
-		to_chat(borg, span_alert("Upgrade mounting error! No suitable hardpoint detected."))
-		to_chat(user, span_warning("There's no mounting point for the module!"))
+	if(istype(user) && !user.temporarilyRemoveItemFromInventory(src))
+		if(silent)
+			to_chat(user, span_warning("[src] is stuck to your hand!"))
 		return FALSE
-	if(!allow_duplicates && (locate(type) in borg.upgrades))
-		to_chat(borg, span_alert("Upgrade mounting error! Hardpoint already occupied!"))
-		to_chat(user, span_warning("The mounting point for the module is already occupied!"))
+	if(installing_cyborg.stat == DEAD)
+		if(!silent)
+			to_chat(cyborg, span_warning("[src] will not function on a deceased cyborg!"))
 		return FALSE
+	if(model_type && (!cyborg.has_model() || !is_type_in_list(cyborg.model, model_type)))
+		if(!silent)
+			to_chat(cyborg, span_alert("Upgrade mounting error! No suitable hardpoint detected."))
+			to_chat(user, span_warning("There's no mounting point for the module!"))
+		return FALSE
+	return TRUE
+
+/obj/item/borg/upgrade/proc/try_install(mob/living/silicon/robot/cyborg, mob/living/carbon/human/user, silent = TRUE)
+	if(!can_install(cyborg, user, silent))
+		to_chat(user, span_danger("Upgrade error."))
+		new_upgrade.forceMove(get_turf(cyborg)) // Gets lost otherwise.
+		return FALSE
+	if(!silent)
+		to_chat(user, span_notice("You apply the upgrade to [cyborg]."))
+		to_chat(cyborg, "----------------\nNew hardware detected... Identified as \"<b>[src]</b>\"... Setup complete.\n----------------")
+	if(delete_on_use)
+		if(!silent)
+			cyborg.logevent("Firmware [src] run successfully.")
+		qdel(src)
+		return FALSE
+	cyborg.upgrades += src
+	cyborg_owner_weakref = WEAKREF(cyborg)
+	install(cyborg, user, silent)
+	RegisterSignal(src, COMSIG_QDELETING, PROC_REF(on_delete))
+	RegisterSignal(src, COMSIG_MOVABLE_MOVED, PROC_REF(on_move))
+	if(!silent)
+		cyborg.logevent("Hardware [src] installed successfully.")
+	return TRUE
+
+/obj/item/borg/upgrade/proc/install(mob/living/silicon/robot/cyborg)
 	// Handles adding/removing items.
 	if(length(items_to_add))
-		install_items(borg, user, items_to_add)
+		install_items(cyborg, items_to_add)
 	if(length(items_to_remove))
-		remove_items(borg, user, items_to_remove)
+		remove_items(cyborg, items_to_remove)
 	return TRUE
 
-/obj/item/borg/upgrade/proc/deactivate(mob/living/silicon/robot/borg, user = usr)
-	if (!(src in borg.upgrades))
-		return FALSE
-	// Handles reverting the items back.
+/obj/item/borg/upgrade/proc/uninstall(mob/living/silicon/robot/cyborg)
+	// Handles removing/adding items back.
 	if(length(items_to_add))
-		remove_items(borg, user, items_to_add)
+		remove_items(cyborg, items_to_add)
 	if(length(items_to_remove))
-		install_items(borg, user, items_to_remove)
+		install_items(cyborg, items_to_remove)
 	return TRUE
+
+/// Called when we are deleted while installed.
+/obj/item/borg/upgrade/proc/on_delete(datum/source)
+	SIGNAL_HANDLER
+	var/mob/living/silicon/robot/cyborg = cyborg_owner_weakref.resolve()
+	if(!QDELETED(cyborg))
+		uninstall(src)
+	cyborg.upgrades -= src
+	QDEL_NULL(cyborg_owner_weakref)
+	UnregisterSignal(src, list(COMSIG_MOVABLE_MOVED, COMSIG_QDELETING))
+
+/// Called when we are moved while installed.
+/obj/item/borg/upgrade/proc/on_move(datum/source, atom/old_loc, movement_dir, forced, list/old_locs, momentum_change)
+	SIGNAL_HANDLER
+	var/mob/living/silicon/robot/cyborg = cyborg_owner_weakref.resolve()
+	if(loc == cyborg)
+		return
+	uninstall(src)
+	cyborg.upgrades -= src
+	QDEL_NULL(cyborg_owner_weakref)
+	UnregisterSignal(src, list(COMSIG_MOVABLE_MOVED, COMSIG_QDELETING))
 
 /// Handles adding items with the module.
-/obj/item/borg/upgrade/proc/install_items(mob/living/silicon/robot/borg, user = usr, list/items)
+/obj/item/borg/upgrade/proc/install_items(mob/living/silicon/robot/cyborg, list/items)
 	for(var/item_to_add in items)
 		var/obj/item/module_item = new item_to_add(borg)
-		borg.model.basic_modules += module_item
-		borg.model.add_module(module_item, FALSE, TRUE)
+		cyborg.model.basic_modules += module_item
+		cyborg.model.add_module(module_item, FALSE, TRUE)
 	return TRUE
 
 /// Handles removing items with the module.
-/obj/item/borg/upgrade/proc/remove_items(mob/living/silicon/robot/borg, user = usr, list/items)
+/obj/item/borg/upgrade/proc/remove_items(mob/living/silicon/robot/cyborg, list/items)
 	for(var/item_to_remove in items)
 		var/obj/item/module_item = locate(item_to_remove) in borg.model.usable_modules
 		if(module_item)
-			borg.model.remove_module(module_item)
+			cyborg.model.remove_module(module_item)
 	return TRUE
 
 /obj/item/borg/upgrade/rename
