@@ -7,7 +7,7 @@
 	icon = 'icons/mob/silicon/robot_items.dmi'
 	icon_state = "module_general"
 	w_class = WEIGHT_CLASS_SMALL
-	/// Whitelist of model types that can use this upgrade.
+	/// Whitelist of model types that can use this upgrade, if any.
 	var/list/model_type = null
 	/// Bitflags listing model compatibility. Used in the exosuit fabricator for creating sub-categories.
 	var/list/model_flags = NONE
@@ -15,25 +15,19 @@
 	var/list/items_to_add
 	/// List of items to remove with the module, if any.
 	var/list/items_to_remove
-	/// If true, requires the cyborg to have chosen a module.
-	var/require_model = FALSE
-	/// If true, will be deleted after usage and will not be stored in the cyborg.
-	var/delete_on_use = FALSE
+	/// If true, will be deleted immediately after usage.
+	var/single_use = FALSE
 	/// If true, allows duplicates of itself to exist within the cyborg.
 	var/allow_duplicates = FALSE
-	/// The cyborg that we have upgraded.
-	var/datum/weakref/cyborg_owner_weakref
-
-/obj/item/borg/upgrade/Destroy(force)
-	if(cyborg_owner_weakref)
-	return..()
+	/// The weakref to the cyborg whom we have upgraded.
+	var/datum/weakref/upgraded_cyborg_weakref
 
 /// Checks if this upgrade can be installed into the cyborg.
 /obj/item/borg/upgrade/proc/can_install(mob/living/silicon/robot/cyborg, mob/living/carbon/human/user, silent = TRUE)
 	if(src in cyborg.upgrades)
 		return FALSE
 	if(istype(user) && !user.temporarilyRemoveItemFromInventory(src))
-		if(silent)
+		if(!silent)
 			to_chat(user, span_warning("[src] is stuck to your hand!"))
 		return FALSE
 	if(installing_cyborg.stat == DEAD)
@@ -47,9 +41,11 @@
 		return FALSE
 	return TRUE
 
+/// Attempts to install the upgrade into a cyborg.
 /obj/item/borg/upgrade/proc/try_install(mob/living/silicon/robot/cyborg, mob/living/carbon/human/user, silent = TRUE)
 	if(!can_install(cyborg, user, silent))
-		to_chat(user, span_danger("Upgrade error."))
+		if(!silent)
+			to_chat(user, span_danger("Upgrade error."))
 		new_upgrade.forceMove(get_turf(cyborg)) // Gets lost otherwise.
 		return FALSE
 	if(!silent)
@@ -61,15 +57,17 @@
 		qdel(src)
 		return FALSE
 	cyborg.upgrades += src
-	cyborg_owner_weakref = WEAKREF(cyborg)
-	install(cyborg, user, silent)
+	upgraded_cyborg_weakref = WEAKREF(cyborg)
+	forceMove(cyborg)
+	on_install(cyborg, user, silent)
 	RegisterSignal(src, COMSIG_QDELETING, PROC_REF(on_delete))
 	RegisterSignal(src, COMSIG_MOVABLE_MOVED, PROC_REF(on_move))
 	if(!silent)
 		cyborg.logevent("Hardware [src] installed successfully.")
 	return TRUE
 
-/obj/item/borg/upgrade/proc/install(mob/living/silicon/robot/cyborg)
+/// Called when this upgrade has been installed.
+/obj/item/borg/upgrade/proc/on_install(mob/living/silicon/robot/cyborg, mob/living/carbon/human/user, silent = TRUE)
 	// Handles adding/removing items.
 	if(length(items_to_add))
 		install_items(cyborg, items_to_add)
@@ -77,34 +75,14 @@
 		remove_items(cyborg, items_to_remove)
 	return TRUE
 
-/obj/item/borg/upgrade/proc/uninstall(mob/living/silicon/robot/cyborg)
+/// Called when this upgrade has been uninstalled.
+/obj/item/borg/upgrade/proc/on_uninstall(mob/living/silicon/robot/cyborg)
 	// Handles removing/adding items back.
 	if(length(items_to_add))
 		remove_items(cyborg, items_to_add)
 	if(length(items_to_remove))
 		install_items(cyborg, items_to_remove)
 	return TRUE
-
-/// Called when we are deleted while installed.
-/obj/item/borg/upgrade/proc/on_delete(datum/source)
-	SIGNAL_HANDLER
-	var/mob/living/silicon/robot/cyborg = cyborg_owner_weakref.resolve()
-	if(!QDELETED(cyborg))
-		uninstall(src)
-	cyborg.upgrades -= src
-	QDEL_NULL(cyborg_owner_weakref)
-	UnregisterSignal(src, list(COMSIG_MOVABLE_MOVED, COMSIG_QDELETING))
-
-/// Called when we are moved while installed.
-/obj/item/borg/upgrade/proc/on_move(datum/source, atom/old_loc, movement_dir, forced, list/old_locs, momentum_change)
-	SIGNAL_HANDLER
-	var/mob/living/silicon/robot/cyborg = cyborg_owner_weakref.resolve()
-	if(loc == cyborg)
-		return
-	uninstall(src)
-	cyborg.upgrades -= src
-	QDEL_NULL(cyborg_owner_weakref)
-	UnregisterSignal(src, list(COMSIG_MOVABLE_MOVED, COMSIG_QDELETING))
 
 /// Handles adding items with the module.
 /obj/item/borg/upgrade/proc/install_items(mob/living/silicon/robot/cyborg, list/items)
@@ -122,31 +100,52 @@
 			cyborg.model.remove_module(module_item)
 	return TRUE
 
+/// Called when we are deleted while installed.
+/obj/item/borg/upgrade/proc/on_delete(datum/source, force)
+	SIGNAL_HANDLER
+	var/mob/living/silicon/robot/cyborg = upgraded_cyborg_weakref.resolve()
+	if(!QDELETED(cyborg) && (src in cyborg.upgrades))
+		on_uninstall(cyborg)
+		cyborg.upgrades -= src
+	QDEL_NULL(upgraded_cyborg_weakref)
+	UnregisterSignal(src, list(COMSIG_MOVABLE_MOVED, COMSIG_QDELETING))
+
+/// Called when we are moved while installed.
+/obj/item/borg/upgrade/proc/on_move(datum/source, atom/old_loc, movement_dir, forced, list/old_locs, momentum_change)
+	SIGNAL_HANDLER
+	var/mob/living/silicon/robot/cyborg = upgraded_cyborg_weakref.resolve()
+	if(loc == cyborg)
+		return
+	if(src in cyborg.upgrades)
+		on_uninstall(cyborg)
+		cyborg.upgrades -= src
+	QDEL_NULL(upgraded_cyborg_weakref)
+	UnregisterSignal(src, list(COMSIG_MOVABLE_MOVED, COMSIG_QDELETING))
+
 /obj/item/borg/upgrade/rename
 	name = "cyborg reclassification board"
 	desc = "Used to rename a cyborg."
 	icon_state = "cyborg_upgrade1"
-	one_use = TRUE
-	var/heldname = ""
+	single_use = TRUE
+	/// The new name that the cyborg will have.
+	var/new_name = ""
 
 /obj/item/borg/upgrade/rename/attack_self(mob/user)
-	var/new_heldname = sanitize_name(tgui_input_text(user, "Enter new robot name", "Cyborg Reclassification", heldname, MAX_NAME_LEN), allow_numbers = TRUE)
-	if(!new_heldname || !user.is_holding(src))
+	var/desired_name = sanitize_name(tgui_input_text(user, "Enter new robot name", "Cyborg Reclassification", desired_name, MAX_NAME_LEN), allow_numbers = TRUE)
+	if(!desired_name || !user.is_holding(src))
 		return
-	heldname = new_heldname
-	user.log_message("set \"[heldname]\" as a name in a cyborg reclassification board at [loc_name(user)]", LOG_GAME)
+	new_name = desired_name
+	user.log_message("set \"[new_name]\" as a name in a cyborg reclassification board at [loc_name(user)]", LOG_GAME)
 
-/obj/item/borg/upgrade/rename/action(mob/living/silicon/robot/borg, user = usr)
-	. = ..()
-	if(!.)
-		return .
-	var/oldname = borg.real_name
-	var/oldkeyname = key_name(borg)
-	borg.custom_name = heldname
-	borg.updatename()
-	if(oldname == borg.real_name)
-		borg.notify_ai(AI_NOTIFICATION_CYBORG_RENAMED, oldname, borg.real_name)
-	usr.log_message("used a cyborg reclassification board to rename [oldkeyname] to [key_name(borg)]", LOG_GAME)
+/obj/item/borg/upgrade/rename/on_install(mob/living/silicon/robot/cyborg, mob/living/carbon/human/user, silent = TRUE)
+	var/old_name = borg.real_name
+	var/old_key_name = key_name(cyborg)
+	cyborg.custom_name = heldname
+	cyborg.updatename()
+	if(old_name == borg.real_name)
+		borg.notify_ai(AI_NOTIFICATION_CYBORG_RENAMED, old_name, borg.real_name)
+	if(!silent)
+		user.log_message("used a cyborg reclassification board to rename [old_key_name] to [key_name(cyborg)]", LOG_GAME)
 
 /obj/item/borg/upgrade/disablercooler
 	name = "cyborg rapid disabler cooling module"
@@ -155,52 +154,61 @@
 	require_model = TRUE
 	model_type = list(/datum/robot_model/security)
 	model_flags = BORG_MODEL_SECURITY
-	// We handle this in a custom way.
 	allow_duplicates = TRUE
+	/// How much charge delay have we reduced our disabler by?
+	var/charge_delay_reduced = 0
 
-/obj/item/borg/upgrade/disablercooler/action(mob/living/silicon/robot/borg, user = usr)
+/// Checks if this upgrade can be installed into the cyborg.
+/obj/item/borg/upgrade/disablercooler/can_install(mob/living/silicon/robot/cyborg, mob/living/carbon/human/user, silent = TRUE)
 	. = ..()
 	if(!.)
-		return .
-	var/obj/item/gun/energy/disabler/cyborg/disabler = locate() in borg.model.usable_modules
+		return FALSE
+	var/obj/item/gun/energy/disabler/cyborg/disabler = locate() in borg.model.get_all_modules()
 	if(isnull(disabler))
-		to_chat(user, span_warning("There's no disabler in this unit!"))
+		if(!silent)
+			to_chat(user, span_warning("There is no disabler in this cyborg!"))
 		return FALSE
 	if(disabler.charge_delay <= 2)
-		to_chat(borg, span_warning("A cooling unit is already installed!"))
-		to_chat(user, span_warning("There's no room for another cooling unit!"))
+		if(!silent)
+			to_chat(cyborg, span_warning("Your disabler cannot be cooled any further!"))
+			to_chat(user, span_warning("There is no room for another cooling unit!"))
 		return FALSE
-	disabler.charge_delay = max(2, disabler.charge_delay - 4)
 
-/obj/item/borg/upgrade/disablercooler/deactivate(mob/living/silicon/robot/borg, user = usr)
+/obj/item/borg/upgrade/disablercooler/on_install(mob/living/silicon/robot/cyborg, mob/living/carbon/human/user, silent = TRUE)
 	. = ..()
-	if(!.)
-		return .
+	var/obj/item/gun/energy/disabler/cyborg/disabler = locate() in borg.model.get_all_modules()
+	var/old_charge_delay = disabler.charge_delay
+	disabler.charge_delay = max(2, disabler.charge_delay - 4)
+	charge_delay_reduced = old_charge_delay - disabler.charge_delay
+
+/obj/item/borg/upgrade/disablercooler/on_uninstall(mob/living/silicon/robot/cyborg)
+	. = ..()
 	var/obj/item/gun/energy/disabler/cyborg/disabler = locate() in borg.model.usable_modules
-	if(isnull(disabler))
-		return FALSE
-	disabler.charge_delay = initial(disabler.charge_delay)
+	disabler.charge_delay += min(disabler.charge_delay + charge_delay_reduced, initial(disabler.charge_delay))
 
 /obj/item/borg/upgrade/thrusters
 	name = "ion thruster upgrade"
 	desc = "An energy-operated thruster system for cyborgs."
 	icon_state = "module_general"
 
-/obj/item/borg/upgrade/thrusters/action(mob/living/silicon/robot/borg, user = usr)
+/obj/item/borg/upgrade/thrusters/can_install(mob/living/silicon/robot/cyborg, mob/living/carbon/human/user, silent = TRUE)
 	. = ..()
 	if(!.)
-		return .
-	if(borg.ionpulse)
-		to_chat(user, span_warning("This unit already has ion thrusters installed!"))
 		return FALSE
-	borg.ionpulse = TRUE
-	borg.toggle_ionpulse() // Enabled by default.
+	if(cyborg.ionpulse)
+		if(!silent)
+			to_chat(user, span_warning("This cyborg already has ion thrusters installed!"))
+		return FALSE
 
-/obj/item/borg/upgrade/thrusters/deactivate(mob/living/silicon/robot/borg, user = usr)
-	. = ..()
-	if(!.)
-		return .
-	borg.ionpulse = FALSE
+/obj/item/borg/upgrade/thrusters/on_install(mob/living/silicon/robot/cyborg, mob/living/carbon/human/user, silent = TRUE)
+	cyborg.ionpulse = TRUE
+	if(!ionpulse_on)
+		cyborg.toggle_ionpulse(TRUE)
+
+/obj/item/borg/upgrade/thrusters/on_uninstall(mob/living/silicon/robot/cyborg)
+	cyborg.ionpulse = FALSE
+	if(ionpulse_on)
+		cyborg.toggle_ionpulse(TRUE)
 
 /obj/item/borg/upgrade/ddrill
 	name = "mining cyborg diamond drill"

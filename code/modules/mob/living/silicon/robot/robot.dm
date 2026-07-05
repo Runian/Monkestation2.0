@@ -209,7 +209,7 @@
 		return
 	return TRUE
 
-/mob/living/silicon/robot/proc/toggle_ionpulse()
+/mob/living/silicon/robot/proc/toggle_ionpulse(silent = FALSE)
 	if(!ionpulse)
 		to_chat(src, span_notice("No thrusters are installed!"))
 		return
@@ -219,7 +219,8 @@
 		ion_trail.set_up(src)
 
 	ionpulse_on = !ionpulse_on
-	to_chat(src, span_notice("You [ionpulse_on ? null :"de"]activate your ion thrusters."))
+	if(silent)
+		to_chat(src, span_notice("You [ionpulse_on ? null :"de"]activate your ion thrusters."))
 	if(ionpulse_on)
 		ion_trail.start()
 	else
