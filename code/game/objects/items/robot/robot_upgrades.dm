@@ -155,9 +155,6 @@
 	model_type = list(/datum/robot_model/security)
 	model_flags = BORG_MODEL_SECURITY
 	allow_duplicates = TRUE
-	/// How much charge delay have we reduced our disabler by?
-	var/charge_delay_reduced = 0
-
 /// Checks if this upgrade can be installed into the cyborg.
 /obj/item/borg/upgrade/disablercooler/can_install(mob/living/silicon/robot/cyborg, mob/living/carbon/human/user, silent = TRUE)
 	. = ..()
@@ -177,14 +174,12 @@
 /obj/item/borg/upgrade/disablercooler/on_install(mob/living/silicon/robot/cyborg, mob/living/carbon/human/user, silent = TRUE)
 	. = ..()
 	var/obj/item/gun/energy/disabler/cyborg/disabler = locate() in borg.model.get_all_modules()
-	var/old_charge_delay = disabler.charge_delay
 	disabler.charge_delay = max(2, disabler.charge_delay - 4)
-	charge_delay_reduced = old_charge_delay - disabler.charge_delay
 
 /obj/item/borg/upgrade/disablercooler/on_uninstall(mob/living/silicon/robot/cyborg)
 	. = ..()
 	var/obj/item/gun/energy/disabler/cyborg/disabler = locate() in borg.model.usable_modules
-	disabler.charge_delay += min(disabler.charge_delay + charge_delay_reduced, initial(disabler.charge_delay))
+	disabler.charge_delay = min(disabler.charge_delay + 4, initial(disabler.charge_delay))
 
 /obj/item/borg/upgrade/thrusters
 	name = "ion thruster upgrade"
