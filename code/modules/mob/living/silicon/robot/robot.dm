@@ -714,7 +714,7 @@
 /mob/living/silicon/robot/proc/update_module_innate()
 	designation = model.name
 	if(hands)
-		hands.icon_state = model.model_select_icon
+		hands.icon_state = model.hud_icon_state
 
 	REMOVE_TRAITS_IN(src, MODEL_TRAIT)
 	if(length(model.model_traits))

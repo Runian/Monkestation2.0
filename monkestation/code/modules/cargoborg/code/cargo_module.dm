@@ -28,7 +28,7 @@
 	hat_offset = 0
 	badge_offset = 0
 	cyborg_base_icon = "cargo"
-	model_select_icon = "cargo"
+	hud_icon_state = "cargo"
 	canDispose = TRUE
 	borg_skins = list(
 		"Technician" = list(

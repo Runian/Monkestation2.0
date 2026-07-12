@@ -17,8 +17,8 @@
 	flags_1 = CONDUCT_1
 	///Host of this model
 	var/mob/living/silicon/robot/robot
-	///Icon of the module selection screen
-	var/model_select_icon = "nomod"
+	/// The icon state that cyborg's model hud will use.
+	var/hud_icon_state = "nomod"
 	///Produces the icon for the borg and, if no special_light_key is set, the lights
 	var/cyborg_base_icon = "robot"
 	///If we want specific lights, use this instead of copying lights in the dmi
@@ -366,7 +366,7 @@
 		/obj/item/reagent_containers/borghypo/clown/hacked,
 		/obj/item/reagent_containers/spray/waterflower/cyborg/hacked,
 	)
-	model_select_icon = "service"
+	hud_icon_state = "brobot"
 	cyborg_base_icon = "clown"
 	hat_offset = -2
 	badge_offset = -2
@@ -410,7 +410,7 @@
 		/obj/item/borg/stun,
 	)
 	cyborg_base_icon = "engineer"
-	model_select_icon = "engineer"
+	hud_icon_state = "engineer"
 	model_traits = list(TRAIT_NEGATES_GRAVITY, TRAIT_KNOW_ENGI_WIRES, TRAIT_KNOW_ROBO_WIRES)
 	hat_offset = -4
 	badge_offset = -4
@@ -484,7 +484,7 @@
 		/obj/item/melee/energy/sword/cyborg, //I don't think there was any reason to use cyborg specific esword with this? They both act functionally the same.
 	)
 	cyborg_base_icon = "robot"
-	model_select_icon = "standard"
+	hud_icon_state = "standard"
 	model_traits = list(TRAIT_NEGATES_GRAVITY)
 	hat_offset = -3
 	badge_offset = -3
@@ -515,7 +515,7 @@
 		/obj/item/reagent_containers/spray/cyborg_lube,
 	)
 	cyborg_base_icon = "janitor"
-	model_select_icon = "janitor"
+	hud_icon_state = "janitor"
 	hat_offset = -5
 	badge_offset = -2
 	/// Weakref to the wash toggle action we own
@@ -777,7 +777,7 @@
 		/obj/item/reagent_containers/borghypo/medical/hacked,
 	)
 	cyborg_base_icon = "medical"
-	model_select_icon = "medical"
+	hud_icon_state = "medical"
 	model_traits = list(TRAIT_PUSHIMMUNE)
 	hat_offset = 3
 	badge_offset = 0
@@ -808,7 +808,7 @@
 		/obj/item/borg/stun,
 	)
 	cyborg_base_icon = "miner"
-	model_select_icon = "miner"
+	hud_icon_state = "miner"
 	hat_offset = 0
 	badge_offset = -2
 	borg_skins = list(
@@ -883,7 +883,7 @@
 		/obj/item/reagent_containers/borghypo/peace/hacked,
 	)
 	cyborg_base_icon = "peace"
-	model_select_icon = "standard"
+	hud_icon_state = "standard"
 	model_traits = list(TRAIT_PUSHIMMUNE)
 	hat_offset = -2
 	badge_offset = -2
@@ -908,7 +908,7 @@
 		/obj/item/gun/energy/laser/cyborg,
 	)
 	cyborg_base_icon = "sec"
-	model_select_icon = "security"
+	hud_icon_state = "security"
 	model_traits = list(TRAIT_PUSHIMMUNE)
 	hat_offset = 3
 	badge_offset = -3
@@ -973,7 +973,7 @@
 		/obj/item/reagent_containers/borghypo/borgshaker/hacked,
 	)
 	cyborg_base_icon = "service_m" // display as butlerborg for radial model selection
-	model_select_icon = "service"
+	hud_icon_state = "service"
 	special_light_key = "service"
 	hat_offset = 0
 	borg_skins = list(
@@ -1045,7 +1045,7 @@
 	)
 	radio_channels = list(RADIO_CHANNEL_SCIENCE, RADIO_CHANNEL_SUPPLY)
 	cyborg_base_icon = "science"
-	model_select_icon = "science"
+	hud_icon_state = "science"
 	hat_offset = 3
 	badge_offset = 3
 	borg_skins = list(
@@ -1080,7 +1080,7 @@
 		/obj/item/pinpointer/syndicate_cyborg,
 	)
 	cyborg_base_icon = "synd_sec"
-	model_select_icon = "malf"
+	hud_icon_state = "malf"
 	model_traits = list(TRAIT_PUSHIMMUNE)
 	hat_offset = 3
 	badge_offset = -3
@@ -1115,7 +1115,7 @@
 		/obj/item/borg/apparatus/organ_storage,
 	)
 	cyborg_base_icon = "synd_medical"
-	model_select_icon = "malf"
+	hud_icon_state = "malf"
 	model_traits = list(TRAIT_PUSHIMMUNE)
 	hat_offset = 3
 
@@ -1146,7 +1146,7 @@
 		/obj/item/borg/charger,
 	)
 	cyborg_base_icon = "synd_engi"
-	model_select_icon = "malf"
+	hud_icon_state = "malf"
 	model_traits = list(TRAIT_PUSHIMMUNE, TRAIT_NEGATES_GRAVITY, TRAIT_KNOW_ENGI_WIRES, TRAIT_KNOW_ROBO_WIRES)
 	hat_offset = -4
 	badge_offset = -4
@@ -1171,7 +1171,7 @@
 		/obj/item/claymore/highlander/robot,
 		/obj/item/pinpointer/nuke,
 	)
-	model_select_icon = "kilt"
+	hud_icon_state = "kilt"
 	cyborg_base_icon = "kilt"
 	hat_offset = -2
 	badge_offset = -2
@@ -1224,7 +1224,7 @@
 	)
 	radio_channels = list(RADIO_CHANNEL_CENTCOM)
 	cyborg_base_icon = "centcomborg"
-	model_select_icon = "service"
+	hud_icon_state = "service"
 	special_light_key = "centcomborg"
 	hat_offset = 3
 	badge_offset = -3
