@@ -5355,6 +5355,7 @@
 #include "code\modules\mob\living\silicon\ai\freelook\eye.dm"
 #include "code\modules\mob\living\silicon\robot\death.dm"
 #include "code\modules\mob\living\silicon\robot\emote.dm"
+#include "code\modules\mob\living\silicon\robot\energy_storage.dm"
 #include "code\modules\mob\living\silicon\robot\examine.dm"
 #include "code\modules\mob\living\silicon\robot\inventory.dm"
 #include "code\modules\mob\living\silicon\robot\laws.dm"
