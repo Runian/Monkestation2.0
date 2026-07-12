@@ -262,11 +262,10 @@
 		return FALSE
 	return ..()
 
-
+/// Called when a cyborg is tipped over.
 /mob/living/silicon/robot/proc/after_tip_over(mob/user)
-	if(hat && !HAS_TRAIT(hat, TRAIT_NODROP))
-		hat.forceMove(drop_location())
-
+	if(worn_hat && !HAS_TRAIT(worn_hat, TRAIT_NODROP))
+		place_on_head(null)
 	unbuckle_all_mobs()
 
 ///For any special cases for robots after being righted.
@@ -300,7 +299,7 @@
 			. += "ov-opencover +c"
 		else
 			. += "ov-opencover -c"
-	if(hat)
+	if(worn_hat)
 		var/mutable_appearance/head_overlay = hat.build_worn_icon(default_layer = 20, default_icon_file = 'icons/mob/clothing/head/default.dmi')
 		head_overlay.pixel_z += model.hat_offset
 		. += head_overlay
@@ -682,7 +681,7 @@
 	custom_name = newname
 
 
-/mob/living/silicon/robot/proc/ResetModel()
+/mob/living/silicon/robot/proc/reset_model()
 	SEND_SIGNAL(src, COMSIG_BORG_SAFE_DECONSTRUCT)
 	drop_all_held_items()
 
@@ -724,18 +723,29 @@
 	INVOKE_ASYNC(src, PROC_REF(updatename))
 
 
+/// Places a hat on the cyborg.
 /mob/living/silicon/robot/proc/place_on_head(obj/item/new_hat)
-	if(hat)
-		hat.forceMove(get_turf(src))
-	hat = new_hat
-	new_hat.forceMove(src)
+	if(worn_hat)
+		var/obj/item/removed_hat = worn_hat
+		removed_hat.forceMove(drop_location()) // worn_hat becomes null here.
+		if(HAS_TRAIT(removed_hat, TRAIT_NODROP))
+			qdel(removed_hat)
+	if(new_hat)
+		worn_hat = new_hat
+		new_hat.forceMove(src)
 	update_icons()
 
+/// Pins a badge to the cyborg.
 /mob/living/silicon/robot/proc/pin_badge(obj/item/clothing/accessory/badge/new_badge)
 	if(worn_badge)
-		worn_badge.forceMove(get_turf(src))
-	worn_badge = new_badge
-	worn_badge.forceMove(src)
+		var/obj/item/clothing/accessory/badge/removed_badget = worn_badge
+		removed_badget.forceMove(drop_location()) // worn_badge becomes null here.
+		if(HAS_TRAIT(removed_badget, TRAIT_NODROP))
+			qdel(removed_badget)
+		worn_badge = null
+	if(new_badge)
+		worn_badge = new_badge
+		worn_badge.forceMove(src)
 	update_icons()
 
 /**
@@ -744,8 +754,8 @@
 */
 /mob/living/silicon/robot/Exited(atom/movable/gone, direction)
 	. = ..()
-	if(hat == gone)
-		hat = null
+	if(worn_hat == gone)
+		worn_hat = null
 		if(!QDELETED(src)) //Don't update icons if we are deleted.
 			update_icons()
 
@@ -923,7 +933,7 @@
 
 	if(stat || incapacitated())
 		return
-	if(model && !model.allow_riding)
+	if(!can_be_ridden)
 		M.visible_message(span_boldwarning("Unfortunately, [M] just can't seem to hold onto [src]!"))
 		return
 

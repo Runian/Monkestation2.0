@@ -32,7 +32,7 @@
 	///Modules not inherent to the robot configuration
 	var/list/added_modules = list()
 	///Storage types of the model
-	var/list/storages = list()
+	var/list/energy_storages = list()
 	///List of traits that will be applied to the mob if this model is used.
 	var/list/model_traits = null
 	///List of radio channels added to the cyborg
@@ -41,8 +41,6 @@
 	var/breakable_modules = TRUE
 	///Whether swapping to this configuration should lockcharge the borg
 	var/locked_transform = TRUE
-	///Can we be ridden
-	var/allow_riding = TRUE
 	///Whether the borg can stuff itself into disposals
 	var/canDispose = FALSE
 	///The y offset of the hat worn on our head.
@@ -84,7 +82,7 @@
 	emag_modules.Cut()
 	modules.Cut()
 	added_modules.Cut()
-	storages.Cut()
+	energy_storages.Cut()
 	clock_modules.Cut() //MonkeStation Edit: Clears clock modules
 	return ..()
 
@@ -162,7 +160,7 @@
 /obj/item/robot_model/proc/respawn_consumable(mob/living/silicon/robot/cyborg, coeff = 1)
 	SHOULD_CALL_PARENT(TRUE)
 
-	for(var/datum/robot_energy_storage/storage_datum in storages)
+	for(var/datum/robot_energy_storage/storage_datum in energy_storages)
 		if(storage_datum.renewable == FALSE)
 			continue
 		storage_datum.energy = min(storage_datum.max_energy, storage_datum.energy + coeff * storage_datum.recharge_rate)
@@ -204,7 +202,7 @@
 		charger.sendmats = FALSE
 		return
 
-	for(var/datum/robot_energy_storage/storage_datum in storages)
+	for(var/datum/robot_energy_storage/storage_datum in energy_storages)
 		if(storage_datum.renewable == TRUE) //Skipping renewables, already handled in respawn_consumable()
 			continue
 		if(storage_datum.max_energy == storage_datum.energy) //Skipping full
@@ -223,7 +221,7 @@
 
 
 /obj/item/robot_model/proc/get_or_create_estorage(storage_type)
-	return (locate(storage_type) in storages) || new storage_type(src)
+	return (locate(storage_type) in energy_storages) || new storage_type(src)
 
 /obj/item/robot_model/emp_act(severity)
 	. = ..()
@@ -772,6 +770,7 @@
 		/obj/item/stack/medical/bone_gel,
 		/obj/item/borg/apparatus/organ_storage,
 		/obj/item/borg/lollipop,
+		/obj/item/holosign_creator/medical/treatment_zone,
 	)
 	radio_channels = list(RADIO_CHANNEL_MEDICAL)
 	emag_modules = list(
@@ -1289,72 +1288,3 @@
 		cyborg.emagged = FALSE
 		cyborg.centcom = FALSE
 	return ..()
-
-// ------------------------------------------ Storages
-/datum/robot_energy_storage
-	var/name = "Generic energy storage"
-	var/max_energy = 30000
-	var/recharge_rate = 1000
-	var/energy
-	///Whether this resource should refill from the aether inside a charging station.
-	var/renewable = TRUE
-	var/datum/material/mat_type
-
-/datum/robot_energy_storage/New(obj/item/robot_model/model)
-	energy = max_energy
-	if(model)
-		model.storages |= src
-		RegisterSignal(model.robot, COMSIG_MOB_GET_STATUS_TAB_ITEMS, PROC_REF(get_status_tab_item))
-		RegisterSignal(model, COMSIG_QDELETING, PROC_REF(unregister_from_model))
-
-/datum/robot_energy_storage/proc/unregister_from_model(obj/item/robot_model/model)
-	SIGNAL_HANDLER
-	if(model)
-		model.storages -= src
-		UnregisterSignal(model.robot, COMSIG_MOB_GET_STATUS_TAB_ITEMS)
-
-/datum/robot_energy_storage/proc/get_status_tab_item(mob/living/silicon/robot/source, list/items)
-	SIGNAL_HANDLER
-	items += "[name]: [energy]/[max_energy]"
-
-/datum/robot_energy_storage/proc/use_charge(amount)
-	if (energy >= amount)
-		energy -= amount
-		if (energy == 0)
-			return TRUE
-		return TRUE
-	else
-		return FALSE
-
-/datum/robot_energy_storage/proc/add_charge(amount)
-	energy = min(energy + amount, max_energy)
-
-/datum/robot_energy_storage/iron
-	name = "Iron Synthesizer"
-	renewable = FALSE
-	mat_type = /datum/material/iron
-
-/datum/robot_energy_storage/glass
-	name = "Glass Synthesizer"
-	renewable = FALSE
-	mat_type = /datum/material/glass
-
-/datum/robot_energy_storage/wire
-	max_energy = 50
-	recharge_rate = 2
-	name = "Wire Synthesizer"
-
-/datum/robot_energy_storage/medical
-	max_energy = 2500
-	recharge_rate = 250
-	name = "Medical Synthesizer"
-
-/datum/robot_energy_storage/beacon
-	max_energy = 30
-	recharge_rate = 1
-	name = "Marker Beacon Storage"
-
-/datum/robot_energy_storage/pipe_cleaner
-	max_energy = 50
-	recharge_rate = 2
-	name = "Pipe Cleaner Synthesizer"
