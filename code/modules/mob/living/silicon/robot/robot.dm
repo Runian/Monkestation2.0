@@ -738,10 +738,10 @@
 /// Pins a badge to the cyborg.
 /mob/living/silicon/robot/proc/pin_badge(obj/item/clothing/accessory/badge/new_badge)
 	if(worn_badge)
-		var/obj/item/clothing/accessory/badge/removed_badget = worn_badge
-		removed_badget.forceMove(drop_location()) // worn_badge becomes null here.
-		if(HAS_TRAIT(removed_badget, TRAIT_NODROP))
-			qdel(removed_badget)
+		var/obj/item/clothing/accessory/badge/removed_badge = worn_badge
+		removed_badge.forceMove(drop_location()) // worn_badge becomes null here.
+		if(HAS_TRAIT(removed_badge, TRAIT_NODROP))
+			qdel(removed_badge)
 		worn_badge = null
 	if(new_badge)
 		worn_badge = new_badge
