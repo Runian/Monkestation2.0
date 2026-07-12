@@ -19,7 +19,11 @@
 	held_items = list(null, null, null) //we use held_items for the module holding, because that makes sense to do!
 	default_hand_amount = 3
 
-	///Represents the cyborg's model (engineering, medical, etc.)
+	/**
+	 * Represents the cyborg's model (engineering, medical, etc.)
+	 *
+	 * This is created during initialization.
+	 */
 	var/obj/item/robot_model/model = null
 	///Variable to store a cyborg's model type incase someone uses a transform module on a cyborg with no client.
 	var/pending_model = null
