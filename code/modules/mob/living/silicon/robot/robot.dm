@@ -300,7 +300,7 @@
 		else
 			. += "ov-opencover -c"
 	if(worn_hat)
-		var/mutable_appearance/head_overlay = hat.build_worn_icon(default_layer = 20, default_icon_file = 'icons/mob/clothing/head/default.dmi')
+		var/mutable_appearance/head_overlay = worn_hat.build_worn_icon(default_layer = 20, default_icon_file = 'icons/mob/clothing/head/default.dmi')
 		head_overlay.pixel_z += model.hat_offset
 		. += head_overlay
 	if(worn_badge)

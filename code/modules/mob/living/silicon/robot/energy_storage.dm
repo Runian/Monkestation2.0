@@ -17,7 +17,7 @@
 	if(!model)
 		return
 	model.energy_storages |= src
-	RegisterSignal(model.cyborg_owner, COMSIG_MOB_GET_STATUS_TAB_ITEMS, PROC_REF(get_status_tab_item))
+	RegisterSignal(model.robot, COMSIG_MOB_GET_STATUS_TAB_ITEMS, PROC_REF(get_status_tab_item))
 	RegisterSignal(model, COMSIG_QDELETING, PROC_REF(unregister_from_model))
 
 /datum/robot_energy_storage/proc/unregister_from_model(obj/item/robot_model/model)
@@ -25,7 +25,7 @@
 	if(!model)
 		return
 	model.energy_storages -= src
-	UnregisterSignal(model.cyborg_owner, COMSIG_MOB_GET_STATUS_TAB_ITEMS)
+	UnregisterSignal(model.robot, COMSIG_MOB_GET_STATUS_TAB_ITEMS)
 
 /datum/robot_energy_storage/proc/get_status_tab_item(mob/living/silicon/robot/source, list/items)
 	SIGNAL_HANDLER

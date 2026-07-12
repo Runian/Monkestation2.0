@@ -293,10 +293,10 @@
 
 /obj/item/robot_model/proc/do_transform_animation()
 	var/mob/living/silicon/robot/cyborg = loc
-	if(cyborg.hat)
-		cyborg.hat.forceMove(drop_location())
+	if(cyborg.worn_hat)
+		cyborg.place_on_head(null)
 	if(cyborg.worn_badge)
-		cyborg.worn_badge.forceMove(drop_location())
+		cyborg.pin_badge(null)
 
 	cyborg.cut_overlays()
 	LAZYNULL(cyborg.managed_overlays) // Or else our overlays won't get re-added (since we are likely to have exact same overlays).
@@ -1193,7 +1193,7 @@
 	robot.put_in_hand(locate(/obj/item/claymore/highlander/robot) in basic_modules, 1)
 	robot.put_in_hand(locate(/obj/item/pinpointer/nuke) in basic_modules, 2)
 	robot.place_on_head(new /obj/item/clothing/head/beret/highlander(robot)) //THE ONLY PART MORE IMPORTANT THAN THE SWORD IS THE HAT
-	ADD_TRAIT(robot.hat, TRAIT_NODROP, HIGHLANDER_TRAIT)
+	ADD_TRAIT(robot.worn_hat, TRAIT_NODROP, HIGHLANDER_TRAIT)
 
 //CENTCOM BORG!!!!
 /obj/item/robot_model/centcom
