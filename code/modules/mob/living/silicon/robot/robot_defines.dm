@@ -182,7 +182,7 @@
 	icon_state = "engineer"
 	set_model = /obj/item/robot_model/engineering
 
-/mob/living/silicon/robot/model/kilt
+/mob/living/silicon/robot/model/kiltborg
 	icon_state = "kilt"
 	set_model = /obj/item/robot_model/syndicate/kiltborg
 
