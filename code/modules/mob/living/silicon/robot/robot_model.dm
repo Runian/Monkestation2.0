@@ -803,6 +803,7 @@
 		/obj/item/gps/cyborg,
 		/obj/item/stack/marker_beacon,
 		/obj/item/borg/apparatus/organ_storage/monster,
+		/obj/item/card/mining_point_card, // Only to benefit from geysers and ore vents.
 	)
 	radio_channels = list(RADIO_CHANNEL_SCIENCE, RADIO_CHANNEL_SUPPLY)
 	emag_modules = list(

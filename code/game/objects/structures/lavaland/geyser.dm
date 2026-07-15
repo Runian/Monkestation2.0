@@ -59,13 +59,13 @@
 	else
 		stop_chemming() //we're full
 
-/obj/structure/geyser/attackby(obj/item/item, mob/user, params)
-	if(!istype(item, /obj/item/mining_scanner) && !istype(item, /obj/item/t_scanner/adv_mining_scanner))
-		return ..() //this runs the plunger code
+/obj/structure/geyser/item_interaction(mob/living/user, obj/item/tool, list/modifiers)
+	if(!istype(tool, /obj/item/mining_scanner) && !istype(tool, /obj/item/t_scanner/adv_mining_scanner))
+		return NONE
 
 	if(discovered)
 		to_chat(user, span_warning("This geyser has already been discovered!"))
-		return
+		return ITEM_INTERACT_FAILURE
 
 	to_chat(user, span_notice("You discovered the geyser and mark it on the GPS system!"))
 	SEND_SIGNAL(user, COMSIG_LIVING_DISCOVERED_GEYSER, src)
@@ -75,17 +75,22 @@
 	discovered = TRUE
 	if(true_name)
 		name = true_name
-
 	AddComponent(/datum/component/gps, true_name) //put it on the gps so miners can mark it and chemists can profit off of it
 
-	if(isliving(user))
-		var/mob/living/living = user
-
-		var/obj/item/card/id/card = living.get_idcard()
-		if(card)
-			to_chat(user, span_notice("[point_value] mining points have been paid out!"))
-			card.registered_account.mining_points += point_value
-			GLOB.lavaland_points_generated += point_value //monkestation edit
+	var/paid_out = FALSE
+	var/obj/item/card/id/card = living.get_idcard()
+	if(card)
+		card.registered_account.mining_points += point_value
+		paid_out = TRUE
+	else if(iscyborg(user))
+		var/obj/item/card/point_card = locate(/obj/item/card/mining_point_card) in cyborg_user || locate(/obj/item/card/mining_point_card) in cyborg_user.model
+		if(point_card)
+			point_card.points += point_value
+			paid_out = TRUE
+	if(paid_out)
+		to_chat(user, span_notice("[point_value] mining points have been paid out!"))
+		GLOB.lavaland_points_generated += point_value
+	return ITEM_INTERACT_SUCCESS
 
 /obj/structure/geyser/wittel
 	reagent_id = /datum/reagent/wittel

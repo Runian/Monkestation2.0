@@ -1086,3 +1086,16 @@
 		/obj/item/storage/bag/xeno,
 		/obj/item/construction/plumbing/research
 	)
+
+/**
+ * Mining Cyborg Changes TODO:
+ * /obj/item/card/mining_point_card
+ * 	WHY: Needed to be rewarded points from geysers and ore vents.
+ * 	NOT WANTED: Will allow them to claim points and buy stuff.
+ * 	SOLUTION: Let anyone that right-clicks a borg with their ID to take all of their points.
+ * 	OTHER NOTES: Cyborg deconstruction should cause it to drop to the floor with all the points (only if there are any points to use).
+ *
+ * KPAs for all other subtypes (e.g. the shockwave)
+ *
+ *
+ */
