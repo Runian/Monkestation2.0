@@ -291,14 +291,22 @@
 		return //Bad end, try again.
 
 	for(var/mob/living/miner in range(7, src)) //Give the miners who are near the vent points and xp.
-		var/obj/item/card/id/user_id_card = miner.get_idcard(TRUE)
+		var/obj/item/card/points_card = miner.get_idcard(TRUE)
 		if(miner.stat <= SOFT_CRIT)
 			miner.mind?.adjust_experience(/datum/skill/mining, MINING_SKILL_BOULDER_SIZE_XP * boulder_size)
-		if(!user_id_card)
+		if(iscyborg(miner))
+			var/mob/living/silicon/robot/cyborg_miner = miner
+			points_card = locate(/obj/item/card/mining_point_card) in (cyborg_miner.contents + cyborg_miner.model.contents)
+		var/point_reward_val = (MINER_POINT_MULTIPLIER * boulder_size) - MINER_POINT_MULTIPLIER // We remove the base value of discovering the vent.
+		if(!points_card?.adjust_mining_points(point_reward_val))
 			continue
-		var/point_reward_val = (MINER_POINT_MULTIPLIER * boulder_size) - MINER_POINT_MULTIPLIER // We remove the base value of discovering the vent
-		user_id_card.registered_account.mining_points += point_reward_val
-		user_id_card.registered_account.bank_card_talk("You have been awarded [point_reward_val] mining points for your efforts.")
+		GLOB.lavaland_points_generated += point_reward_val
+		var/reward_message = "You have been awarded [point_reward_val] mining points for your efforts."
+		if(isidcard(points_card))
+			var/obj/item/card/id/id_card = points_card
+			id_card.registered_account.bank_card_talk(reward_message)
+			continue
+		to_chat(miner, span_notice(reward_message))
 	node.pre_escape() //Visually show the drone is done and flies away.
 	node = null
 	add_overlay(mutable_appearance('monkestation/code/modules/factory_type_beat/icons/terrain.dmi', "well", ABOVE_MOB_LAYER, src, GAME_PLANE))
@@ -358,11 +366,19 @@
 		balloon_alert(user, "vent scanned!")
 		generate_description(user)
 		AddComponent(/datum/component/gps, name)
-		var/obj/item/card/id/user_id_card = user.get_idcard(TRUE)
-		if(isnull(user_id_card))
+		var/obj/item/card/points_card = user.get_idcard(TRUE)
+		if(iscyborg(user))
+			var/mob/living/silicon/robot/cyborg_user = user
+			points_card = locate(/obj/item/card/mining_point_card) in (cyborg_user.contents + cyborg_user.model.contents)
+		if(!points_card?.adjust_mining_points(MINER_POINT_MULTIPLIER))
 			return
-		user_id_card.registered_account.mining_points += (MINER_POINT_MULTIPLIER)
-		user_id_card.registered_account.bank_card_talk("You've been awarded [MINER_POINT_MULTIPLIER] mining points for discovery of an ore vent.")
+		GLOB.lavaland_points_generated += MINER_POINT_MULTIPLIER
+		var/reward_message = "You've been awarded [MINER_POINT_MULTIPLIER] mining points for discovery of an ore vent."
+		if(isidcard(points_card))
+			var/obj/item/card/id/id_card = points_card
+			id_card.registered_account.bank_card_talk(reward_message)
+			return
+		to_chat(user, span_notice(reward_message))
 		return
 
 	if(scan_only) //Placed here to allow rewards

@@ -14,7 +14,7 @@
 	cost_per_order = 1000
 
 /datum/orderable_item/extra/point_card
-	item_path = /obj/item/card/mining_point_card
+	item_path = /obj/item/card/mining_point_card/prefilled
 	cost_per_order = 500
 
 /datum/orderable_item/extra/capsule_luxury //this and the elite capsule are here because they are mostly if not entirely unecessary compared to the regular pod, thus should probably be considered extra

@@ -36,6 +36,17 @@
 	user.visible_message(span_suicide("[user] begins to swipe [user.p_their()] neck with \the [src]! It looks like [user.p_theyre()] trying to commit suicide!"))
 	return BRUTELOSS
 
+/**
+ * Adjusts the amount of mining points on the card.
+ *
+ * Returns TRUE if it was successfully adjusted.
+ */
+/obj/item/card/proc/adjust_mining_points(point_adjustment)
+	return FALSE
+
+/obj/item/card/proc/get_mining_points()
+	return 0
+
 /*
  * ID CARDS
  */
@@ -899,6 +910,17 @@
 /// Returns the trim sechud icon state.
 /obj/item/card/id/proc/get_trim_sechud_icon_state()
 	return trim?.sechud_icon_state || SECHUD_UNKNOWN
+
+/obj/item/card/id/adjust_mining_points(point_adjustment)
+	if(!registered_account)
+		return FALSE
+	registered_account.mining_points += point_adjustment
+	return TRUE
+
+/obj/item/card/id/get_mining_points()
+	if(!registered_account)
+		return 0
+	return registered_account.mining_points
 
 /obj/item/card/id/away
 	name = "\proper a perfectly generic identification card"

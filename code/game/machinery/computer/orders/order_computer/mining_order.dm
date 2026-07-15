@@ -151,38 +151,58 @@
 	name = "mining point transfer card"
 	desc = "A small, reusable card for transferring mining points. Swipe your ID card over it to start the process."
 	icon_state = "data_1"
-
 	///Amount of points this card contains.
-	var/points = 325
+	var/points = 0
 
 /obj/item/card/mining_point_card/examine(mob/user)
 	. = ..()
 	. += span_notice("There's [points] point\s on the card.")
 
-/obj/item/card/mining_point_card/attackby(obj/item/attacking_item, mob/user, list/modifiers, list/attack_modifiers)
-	if(!isidcard(attacking_item))
-		return ..()
-	var/obj/item/card/id/attacking_id = attacking_item
+/obj/item/card/mining_point_card/item_interaction(mob/living/user, obj/item/tool, list/modifiers)
+	if(!istype(tool, /obj/item/card))
+		return NONE
+	. = ITEM_INTERACT_BLOCKING
+
+	var/obj/item/card/interacting_card = tool
+	var/transferrable_points = interacting_card.get_mining_points()
+	if(!transferrable_points)
+		return
+
 	balloon_alert(user, "starting transfer")
 	var/point_movement = tgui_alert(user, "To ID (from card) or to card (from ID)?", "Mining Points Transfer", list(TO_USER_ID, TO_POINT_CARD))
 	if(!point_movement)
 		return
-	var/amount = tgui_input_number(user, "How much do you want to transfer? ID Balance: [attacking_id.registered_account.mining_points], Card Balance: [points]", "Transfer Points", min_value = 0, round_value = 1)
-	if(!amount)
+	var/points_to_transfer = tgui_input_number(user, "How much do you want to transfer? ID Balance: [transferrable_points], Card Balance: [points]", "Transfer Points", min_value = 0, round_value = 1)
+	if(!points_to_transfer)
 		return
+
+	// Have to check again since we slept by waiting for user input.
+	transferrable_points = interacting_card.get_mining_points()
+	if(!transferrable_points)
+		return
+
+	points_to_transfer = clamp(points_to_transfer, 0, transferrable_points)
+
 	switch(point_movement)
 		if(TO_USER_ID)
-			if(amount > points)
-				amount = points
-			attacking_id.registered_account.mining_points += amount
-			points -= amount
-			to_chat(user, span_notice("You transfer [amount] mining points from [src] to [attacking_id]."))
+			if(interacting_card.adjust_mining_points(points_to_transfer))
+				adjust_mining_points(-points_to_transfer)
+				to_chat(user, span_notice("You transfer [points_to_transfer] mining points from [src] to [interacting_card]."))
 		if(TO_POINT_CARD)
-			if(amount > attacking_id.registered_account.mining_points)
-				amount = attacking_id.registered_account.mining_points
-			attacking_id.registered_account.mining_points -= amount
-			points += amount
-			to_chat(user, span_notice("You transfer [amount] mining points from [attacking_id] to [src]."))
+			if(interacting_card.adjust_mining_points(-points_to_transfer))
+				interacting_card.adjust_mining_points(points_to_transfer)
+			to_chat(user, span_notice("You transfer [points_to_transfer] mining points from [interacting_card] to [src]."))
+	return ITEM_INTERACT_SUCCESS
+
+/obj/item/card/mining_point_card/adjust_mining_points(point_adjustment)
+	points += point_adjustment
+	return TRUE
+
+/obj/item/card/mining_point_card/get_mining_points()
+	return points
+
+/obj/item/card/mining_point_card/prefilled
+	points = 325
 
 #undef CREDIT_TYPE_MINING
 #undef TO_POINT_CARD
