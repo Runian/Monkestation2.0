@@ -722,23 +722,18 @@ GLOBAL_VAR_INIT(lavaland_points_generated, 0)
 	initial_gas_mix = LAVALAND_DEFAULT_ATMOS
 	defer_change = TRUE
 
-
-/turf/closed/mineral/random/regrowth/New(loc, mineral_increase)
-	if(isnum(mineral_increase))
-		src.mineralChance += mineral_increase
-	. = ..()
-
 /turf/closed/mineral/random/regrowth/Destroy(force)
 	. = ..()
 	var/timer = max(1 MINUTES - round(max(1, GLOB.lavaland_points_generated) / 1000), 5 SECONDS)
 	addtimer(CALLBACK(GLOBAL_PROC, GLOBAL_PROC_REF(regrow_mineral), get_turf(src)), timer)
 
+/// Creates a regrowth material turf ontop of an another turf.
 /proc/regrow_mineral(turf/location)
-	var/mineral_increase = 0
-	if(GLOB.lavaland_points_generated > 55000)
-		mineral_increase = min(87, (GLOB.lavaland_points_generated - 55000) / 1000)
-	var/turf/closed/mineral/random/regrowth/regrowth_turf = location.ChangeTurf(/turf/closed/mineral/random/regrowth, flags = CHANGETURF_INHERIT_AIR)
-	regrowth_turf?.mineralChance += mineral_increase
+	var/turf/closed/mineral/random/regrowth/regrowth_turf = location.PlaceOnTop(/turf/closed/mineral/random/regrowth, flags = CHANGETURF_INHERIT_AIR)
+	if(GLOB.lavaland_points_generated <= 55000)
+		return
+	var/mineral_increase = min(87, (GLOB.lavaland_points_generated - 55000) / 1000)
+	regrowth_turf.mineralChance = clamp(initial(regrowth_turf.mineralChance) + mineral_increase, 0, 100)
 
 /turf/closed/mineral/random/regrowth/underwater
 	turf_type = /turf/open/floor/plating/ocean/dark
