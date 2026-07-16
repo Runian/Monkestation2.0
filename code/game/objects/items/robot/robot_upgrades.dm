@@ -147,6 +147,27 @@
 		return .
 	borg.ionpulse = FALSE
 
+/obj/item/borg/upgrade/lavaproof
+	name = "mining cyborg lavaproof chassis"
+	desc = "An upgrade kit to apply specialized coolant systems and insulation layers to a mining cyborg's chassis, enabling them to withstand exposure to molten rock and liquid plasma."
+	icon_state = "module_miner"
+	resistance_flags = LAVA_PROOF | FIRE_PROOF | FREEZE_PROOF
+	require_model = TRUE
+	model_type = list(/obj/item/robot_model/miner)
+	model_flags = BORG_MODEL_MINER
+
+/obj/item/borg/upgrade/lavaproof/action(mob/living/silicon/robot/borg, user = usr)
+	. = ..()
+	if(!.)
+		return .
+	borg.add_traits(list(TRAIT_LAVA_IMMUNE, TRAIT_SNOWSTORM_IMMUNE), type)
+
+/obj/item/borg/upgrade/lavaproof/deactivate(mob/living/silicon/robot/borg, user = usr)
+	. = ..()
+	if(!.)
+		return .
+	borg.remove_traits(list(TRAIT_LAVA_IMMUNE, TRAIT_SNOWSTORM_IMMUNE), type)
+
 /obj/item/borg/upgrade/ddrill
 	name = "mining cyborg diamond drill"
 	desc = "A diamond drill replacement for the mining model's standard drill."
@@ -159,13 +180,30 @@
 
 /obj/item/borg/upgrade/soh
 	name = "mining cyborg satchel of holding"
-	desc = "A satchel of holding replacement for mining cyborg's ore satchel module."
+	desc = "A satchel of holding replacement for the mining cyborg's ore satchel module."
 	icon_state = "module_miner"
 	require_model = TRUE
 	model_type = list(/obj/item/robot_model/miner)
 	model_flags = BORG_MODEL_MINER
 	items_to_add = list(/obj/item/storage/bag/ore/holding)
 	items_to_remove = list(/obj/item/storage/bag/ore/cyborg)
+
+/obj/item/borg/upgrade/kpa_replacement
+	name = "mining cyborg proto-kinetic accelerator replacement"
+	desc = "A proto-kinetic accelerator replacement for the mining cyborg's current proto-kinetic accelerator."
+	icon_state = "module_miner"
+	require_model = TRUE
+	model_type = list(/obj/item/robot_model/miner)
+	model_flags = BORG_MODEL_MINER
+
+// TODO: check for existing replacement.
+// if replacement, uninstall it
+// replacement
+//
+//
+//
+
+
 
 /obj/item/borg/upgrade/tboh
 	name = "janitor cyborg trash bag of holding"
@@ -218,27 +256,6 @@
 	if(!.)
 		return .
 	borg.SetEmagged(FALSE)
-
-/obj/item/borg/upgrade/lavaproof
-	name = "mining cyborg lavaproof chassis"
-	desc = "An upgrade kit to apply specialized coolant systems and insulation layers to a mining cyborg's chassis, enabling them to withstand exposure to molten rock and liquid plasma."
-	icon_state = "module_miner"
-	resistance_flags = LAVA_PROOF | FIRE_PROOF | FREEZE_PROOF
-	require_model = TRUE
-	model_type = list(/obj/item/robot_model/miner)
-	model_flags = BORG_MODEL_MINER
-
-/obj/item/borg/upgrade/lavaproof/action(mob/living/silicon/robot/borg, user = usr)
-	. = ..()
-	if(!.)
-		return .
-	borg.add_traits(list(TRAIT_LAVA_IMMUNE, TRAIT_SNOWSTORM_IMMUNE), type)
-
-/obj/item/borg/upgrade/lavaproof/deactivate(mob/living/silicon/robot/borg, user = usr)
-	. = ..()
-	if(!.)
-		return .
-	borg.remove_traits(list(TRAIT_LAVA_IMMUNE, TRAIT_SNOWSTORM_IMMUNE), type)
 
 /obj/item/borg/upgrade/selfrepair
 	name = "self-repair module"
