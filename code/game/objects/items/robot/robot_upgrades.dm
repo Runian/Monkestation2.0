@@ -190,11 +190,30 @@
 
 /obj/item/borg/upgrade/kpa_replacement
 	name = "mining cyborg proto-kinetic accelerator replacement"
-	desc = "A proto-kinetic accelerator replacement for the mining cyborg's current proto-kinetic accelerator."
+	desc = "An upgrade that replaces a mining cyborg's current proto-kinetic accelerator with a different one."
 	icon_state = "module_miner"
 	require_model = TRUE
 	model_type = list(/obj/item/robot_model/miner)
 	model_flags = BORG_MODEL_MINER
+
+/obj/item/borg/upgrade/kpa_replacement/action(mob/living/silicon/robot/borg, user = usr)
+	. = ..()
+	if(!.)
+		return .
+	for(var/obj/item/borg/upgrade/modkit/modkit_upgrade in borg.upgrades) // Only matters if this is their first time getting their weapon replaced.
+		modkit_upgrade.forceMove(get_turf(borg))
+	for(var/obj/item/borg/upgrade/kpa_replacement/modkit_upgrade in borg.upgrades)
+		modkit_upgrade.forceMove(get_turf(borg))
+
+
+/obj/item/borg/upgrade/kpa_replacement/deactivate(mob/living/silicon/robot/borg, user = usr)
+	. = ..()
+	if(!.)
+		return .
+	for(var/obj/item/borg/upgrade/modkit/modkit_upgrade in borg.upgrades)
+		modkit_upgrade.forceMove(get_turf(borg))
+
+
 
 // TODO: check for existing replacement.
 // if replacement, uninstall it
