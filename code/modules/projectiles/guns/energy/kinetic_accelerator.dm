@@ -142,14 +142,11 @@
 		modkit_upgrade.modify_projectile(kinetic_projectile)
 
 /obj/item/gun/energy/recharge/kinetic_accelerator/cyborg
-	icon_state = "kineticgun_b"
-	hitsound = 'sound/weapons/bladeslice.ogg' // has a blade
 	holds_charge = TRUE
 	unique_frequency = TRUE
-	sharpness = SHARP_EDGED
-	force = 15
-	wound_bonus = 5
-	bare_wound_bonus = 10 // worse than surviavl knife
+
+/obj/item/gun/energy/recharge/kinetic_accelerator/cyborg/add_bayonet_point()
+	AddComponent(/datum/component/bayonet_attachable, starting_bayonet = new /obj/item/knife/combat/survival(src), offset_x = 20, offset_y = 12, removable = FALSE)
 
 /obj/item/gun/energy/recharge/kinetic_accelerator/minebot
 	trigger_guard = TRIGGER_GUARD_ALLOW_ALL
