@@ -188,6 +188,7 @@
 	items_to_add = list(/obj/item/storage/bag/ore/holding)
 	items_to_remove = list(/obj/item/storage/bag/ore/cyborg)
 
+// This is a base item which should be inherited from.
 /obj/item/borg/upgrade/kpa_replacement
 	name = "mining cyborg proto-kinetic accelerator replacement"
 	desc = "An upgrade that replaces a mining cyborg's current proto-kinetic accelerator with a different one."
@@ -197,32 +198,40 @@
 	model_flags = BORG_MODEL_MINER
 
 /obj/item/borg/upgrade/kpa_replacement/action(mob/living/silicon/robot/borg, user = usr)
-	. = ..()
-	if(!.)
-		return .
-	for(var/obj/item/borg/upgrade/modkit/modkit_upgrade in borg.upgrades) // Only matters if this is their first time getting their weapon replaced.
+	for(var/obj/item/borg/upgrade/modkit/modkit_upgrade in borg.upgrades)
 		modkit_upgrade.forceMove(get_turf(borg))
 	for(var/obj/item/borg/upgrade/kpa_replacement/modkit_upgrade in borg.upgrades)
 		modkit_upgrade.forceMove(get_turf(borg))
-
+	return ..()
 
 /obj/item/borg/upgrade/kpa_replacement/deactivate(mob/living/silicon/robot/borg, user = usr)
-	. = ..()
-	if(!.)
-		return .
 	for(var/obj/item/borg/upgrade/modkit/modkit_upgrade in borg.upgrades)
 		modkit_upgrade.forceMove(get_turf(borg))
+	return ..()
 
+/obj/item/borg/upgrade/kpa_replacement/glock
+	name = "mining cyborg proto-kinetic accelerator glock replacement"
+	desc = "An upgrade that replaces a mining cyborg's current proto-kinetic accelerator with the glock variant."
+	items_to_add = list(/obj/item/gun/energy/recharge/kinetic_accelerator/glock/cyborg)
+	items_to_remove = list(/obj/item/gun/energy/recharge/kinetic_accelerator/cyborg)
 
+/obj/item/borg/upgrade/kpa_replacement/railgun
+	name = "mining cyborg proto-kinetic accelerator railgun replacement"
+	desc = "An upgrade that replaces a mining cyborg's current proto-kinetic accelerator with the railgun variant."
+	items_to_add = list(/obj/item/gun/energy/recharge/kinetic_accelerator/railgun/cyborg)
+	items_to_remove = list(/obj/item/gun/energy/recharge/kinetic_accelerator/cyborg)
 
-// TODO: check for existing replacement.
-// if replacement, uninstall it
-// replacement
-//
-//
-//
+/obj/item/borg/upgrade/kpa_replacement/repeater
+	name = "mining cyborg proto-kinetic accelerator repeater replacement"
+	desc = "An upgrade that replaces a mining cyborg's current proto-kinetic accelerator with the repeater variant."
+	items_to_add = list(/obj/item/gun/energy/recharge/kinetic_accelerator/repeater/cyborg)
+	items_to_remove = list(/obj/item/gun/energy/recharge/kinetic_accelerator/cyborg)
 
-
+/obj/item/borg/upgrade/kpa_replacement/shockwave
+	name = "mining cyborg proto-kinetic accelerator shockwave replacement"
+	desc = "An upgrade that replaces a mining cyborg's current proto-kinetic accelerator with the shockwave variant."
+	items_to_add = list(/obj/item/gun/energy/recharge/kinetic_accelerator/shockwave/cyborg)
+	items_to_remove = list(/obj/item/gun/energy/recharge/kinetic_accelerator/cyborg)
 
 /obj/item/borg/upgrade/tboh
 	name = "janitor cyborg trash bag of holding"

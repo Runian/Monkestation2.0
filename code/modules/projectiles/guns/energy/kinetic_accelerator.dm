@@ -9,13 +9,14 @@
 	obj_flags = UNIQUE_RENAME
 	weapon_weight = WEAPON_LIGHT
 	gun_flags = NOT_A_REAL_GUN
-	///List of all mobs that projectiles fired from this gun will ignore.
+	/// List of all mobs that projectiles fired from this gun will ignore.
 	var/list/ignored_mob_types
-	///List of all modkits currently in the kinetic accelerator.
+	/// List of all modkits currently in the kinetic accelerator.
 	var/list/obj/item/borg/upgrade/modkit/modkits = list()
-	///The max capacity of modkits the PKA can have installed at once.
+	/// The max capacity of modkits the PKA can have installed at once.
 	var/max_mod_capacity = 100
-	var/disablemodification = FALSE //monkeedit - stops removal and addition of mods
+	/// Prevents the removal or addition of any modkits.
+	var/disable_modification = FALSE
 
 /obj/item/gun/energy/recharge/kinetic_accelerator/add_bayonet_point()
 	AddComponent(/datum/component/bayonet_attachable, offset_x = 20, offset_y = 12)
@@ -56,21 +57,27 @@
 
 /obj/item/gun/energy/recharge/kinetic_accelerator/examine(mob/user)
 	. = ..()
-	if(max_mod_capacity)
-		. += "<b>[get_remaining_mod_capacity()]%</b> mod capacity remaining."
-		. += span_info("You can use a <b>crowbar</b> to remove all modules or <b>right-click</b> with an empty hand to remove a specific one.")
+	if(disable_modification)
 		for(var/obj/item/borg/upgrade/modkit/modkit_upgrade as anything in modkits)
-			. += span_notice("There is \a [modkit_upgrade] installed, using <b>[modkit_upgrade.cost]%</b> capacity.")
+			. += span_notice("There is \a [modkit_upgrade] installed.")
+		return
+	. += "<b>[get_remaining_mod_capacity()]%</b> mod capacity remaining."
+	. += span_info("You can use a <b>crowbar</b> to remove all modules or <b>right-click</b> with an empty hand to remove a specific one.")
+	for(var/obj/item/borg/upgrade/modkit/modkit_upgrade as anything in modkits)
+		. += span_notice("There is \a [modkit_upgrade] installed, using <b>[modkit_upgrade.cost]%</b> capacity.")
 
-/obj/item/gun/energy/recharge/kinetic_accelerator/crowbar_act(mob/living/user, obj/item/I)
+/obj/item/gun/energy/recharge/kinetic_accelerator/crowbar_act(mob/living/user, obj/item/tool)
 	. = TRUE
-	if(modkits.len && !disablemodification) //monkeedit
-		to_chat(user, span_notice("You pry all the modifications out."))
-		I.play_tool_sound(src, 100)
-		for(var/obj/item/borg/upgrade/modkit/modkit_upgrade as anything in modkits)
-			modkit_upgrade.forceMove(drop_location()) //uninstallation handled in Exited(), or /mob/living/silicon/robot/remove_from_upgrades() for borgs
-	else
+	if(!modkits.len)
 		to_chat(user, span_notice("There are no modifications currently installed."))
+		return
+	if(disable_modification)
+		to_chat(user, span_notice("The modifications cannot be removed."))
+		return
+	to_chat(user, span_notice("You pry all the modifications out."))
+	tool.play_tool_sound(src, 100)
+	for(var/obj/item/borg/upgrade/modkit/modkit_upgrade as anything in modkits)
+		modkit_upgrade.forceMove(drop_location()) // Uninstallation handled in Exited(). For cyborgs, uninstallation is handled at [/mob/living/silicon/robot/remove_from_upgrades()] instead.
 
 /obj/item/gun/energy/recharge/kinetic_accelerator/attack_hand_secondary(mob/user, list/modifiers)
 	. = ..()
@@ -114,8 +121,8 @@
 
 /obj/item/gun/energy/recharge/kinetic_accelerator/Exited(atom/movable/gone, direction)
 	if(gone in modkits)
-		var/obj/item/borg/upgrade/modkit/MK = gone
-		MK.uninstall(src)
+		var/obj/item/borg/upgrade/modkit/gone_modkit = gone
+		gone_modkit.uninstall(src)
 	return ..()
 
 /obj/item/gun/energy/recharge/kinetic_accelerator/Entered(atom/movable/arrived, atom/old_loc, list/atom/old_locs)
@@ -124,7 +131,7 @@
 		modkits |= arrived
 
 /obj/item/gun/energy/recharge/kinetic_accelerator/attackby(obj/item/I, mob/user)
-	if(istype(I, /obj/item/borg/upgrade/modkit) && !disablemodification) //monkeedit
+	if(istype(I, /obj/item/borg/upgrade/modkit) && !disable_modification)
 		var/obj/item/borg/upgrade/modkit/MK = I
 		MK.install(src, user)
 	else
@@ -180,6 +187,12 @@
 	ammo_type = list(/obj/item/ammo_casing/energy/kinetic/glock)
 	max_mod_capacity = 210
 
+/obj/item/gun/energy/recharge/kinetic_accelerator/glock/cyborg
+	holds_charge = TRUE
+	unique_frequency = TRUE
+
+/obj/item/gun/energy/recharge/kinetic_accelerator/glock/cyborg/add_bayonet_point()
+	AddComponent(/datum/component/bayonet_attachable, starting_bayonet = new /obj/item/knife/combat/survival(src), offset_x = 20, offset_y = 12, removable = FALSE)
 
 /obj/item/gun/energy/recharge/kinetic_accelerator/railgun
 	name = "proto-kinetic railgun"
@@ -199,8 +212,14 @@
 	weapon_weight = WEAPON_HEAVY
 	max_mod_capacity = 0 // Fuck off
 	recoil = 1 // Railgun go brrrrr
-	disablemodification = TRUE
+	disable_modification = TRUE
 
+/obj/item/gun/energy/recharge/kinetic_accelerator/railgun/cyborg
+	holds_charge = TRUE
+	unique_frequency = TRUE
+
+/obj/item/gun/energy/recharge/kinetic_accelerator/railgun/cyborg/add_bayonet_point()
+	AddComponent(/datum/component/bayonet_attachable, starting_bayonet = new /obj/item/knife/combat/survival(src), offset_x = 20, offset_y = 12, removable = FALSE)
 
 /obj/item/gun/energy/recharge/kinetic_accelerator/repeater
 	name = "proto-kinetic repeater"
@@ -215,6 +234,12 @@
 	ammo_type = list(/obj/item/ammo_casing/energy/kinetic/repeater)
 	max_mod_capacity = 60
 
+/obj/item/gun/energy/recharge/kinetic_accelerator/repeater/cyborg
+	holds_charge = TRUE
+	unique_frequency = TRUE
+
+/obj/item/gun/energy/recharge/kinetic_accelerator/repeater/cyborg/add_bayonet_point()
+	AddComponent(/datum/component/bayonet_attachable, starting_bayonet = new /obj/item/knife/combat/survival(src), offset_x = 20, offset_y = 12, removable = FALSE)
 
 /obj/item/gun/energy/recharge/kinetic_accelerator/shockwave
 	name = "proto-kinetic shockwave"
@@ -230,7 +255,12 @@
 	ammo_type = list(/obj/item/ammo_casing/energy/kinetic/shockwave)
 	max_mod_capacity = 90 //bumped up to 90 to compensate for the 30 you need to spend on the AOE mod that gives it its functionality
 
+/obj/item/gun/energy/recharge/kinetic_accelerator/shockwave/cyborg
+	holds_charge = TRUE
+	unique_frequency = TRUE
 
+/obj/item/gun/energy/recharge/kinetic_accelerator/shockwave/cyborg/add_bayonet_point()
+	AddComponent(/datum/component/bayonet_attachable, starting_bayonet = new /obj/item/knife/combat/survival(src), offset_x = 20, offset_y = 12, removable = FALSE)
 
 //ADMIN ONLY SUPER OP
 
