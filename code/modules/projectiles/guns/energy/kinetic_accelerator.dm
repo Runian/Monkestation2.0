@@ -651,7 +651,7 @@
 /obj/item/borg/upgrade/modkit/hardmode/projectile_strike(obj/projectile/kinetic/kinetic_projectile, turf/target_turf, mob/living/simple_animal/hostile/megafauna/target, obj/item/gun/energy/recharge/kinetic_accelerator/kinetic_gun)
 	if(!istype(target))
 		return
-	if(isnull(target.hardmode_reward) && !target.hardmode)
+	if(isnull(target.hardmode_reward) || target.hardmode)
 		return
 	if(is_station_level(target.z))
 		return
