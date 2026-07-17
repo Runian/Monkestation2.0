@@ -229,8 +229,7 @@
 	desc = "Innovating on the mining blast mod, Mining Research and Development has managed to overclock the performance of the mod to the extreme. \
 	The result is a specialized accelerator frame that when equipped with the accompanying modkit grants a fairly punchy, large blast that is excellent \
 	for clearing large amounts of rocks and crowded fauna. \
-	The only downside is the lowered mod capacity, lack of range, required mod, and longer cooldown... but its pretty good for clearing rocks. \
-	A warning label is stuck to the side : Weapon will underperform without accompanying mod (Should be included with purchase)."
+	The only downside is the lowered mod capacity, lack of range and longer cooldown... but its pretty good for clearing rocks."
 	icon = 'icons/obj/weapons/guns/energy.dmi'
 	icon_state = "kineticshockwave"
 	base_icon_state = "kineticshockwave"
