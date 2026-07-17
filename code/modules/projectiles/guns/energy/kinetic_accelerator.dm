@@ -72,7 +72,6 @@
 		return SECONDARY_ATTACK_CANCEL_ATTACK_CHAIN
 	if(!LAZYLEN(modkits))
 		return SECONDARY_ATTACK_CONTINUE_CHAIN
-	. = SECONDARY_ATTACK_CANCEL_ATTACK_CHAIN
 
 	var/list/display_names = list()
 	var/list/items = list()
@@ -83,16 +82,19 @@
 		if(length(thing.overlays))
 			item_image.copy_overlays(thing)
 		items["[thing.name] ([modkits_length])"] = item_image
+
 	var/pick = show_radial_menu(user, src, items, custom_check = CALLBACK(src, PROC_REF(check_menu), user), radius = 36, require_near = TRUE, tooltips = TRUE)
 	if(!pick)
-		return
+		return SECONDARY_ATTACK_CANCEL_ATTACK_CHAIN
+
 	var/modkit_reference = display_names[pick]
 	var/obj/item/borg/upgrade/modkit/modkit_to_remove = locate(modkit_reference) in modkits
 	if(!istype(modkit_to_remove))
-		return
+		return SECONDARY_ATTACK_CANCEL_ATTACK_CHAIN
 	if(!user.put_in_hands(modkit_to_remove))
 		modkit_to_remove.forceMove(drop_location())
 	update_appearance(UPDATE_ICON)
+	return SECONDARY_ATTACK_CANCEL_ATTACK_CHAIN
 
 /obj/item/gun/energy/recharge/kinetic_accelerator/crowbar_act(mob/living/user, obj/item/tool)
 	. = TRUE
@@ -376,7 +378,6 @@
 /// This occurs after the kinetic accelerator's effects and after [projectile_strike_predamage()] above.
 /obj/item/borg/upgrade/modkit/proc/projectile_strike(obj/projectile/kinetic/kinetic_projectile, turf/target_turf, atom/target, obj/item/gun/energy/recharge/kinetic_accelerator/kinetic_gun)
 
-// Range modkits.
 /obj/item/borg/upgrade/modkit/range
 	name = "range increase"
 	desc = "Increases the range of a kinetic accelerator when installed."
@@ -386,7 +387,6 @@
 /obj/item/borg/upgrade/modkit/range/modify_projectile(obj/projectile/kinetic/kinetic_projectile)
 	kinetic_projectile.range += modifier
 
-// Damage modkits.
 /obj/item/borg/upgrade/modkit/damage
 	name = "damage increase"
 	desc = "Increases the damage of kinetic accelerator when installed."
@@ -396,7 +396,6 @@
 	kinetic_projectile.damage += modifier
 	return ..()
 
-// Cooldown modkits.
 /obj/item/borg/upgrade/modkit/cooldown
 	name = "cooldown decrease"
 	desc = "Decreases the cooldown of a kinetic accelerator. Not rated for minebot use."
@@ -432,7 +431,6 @@
 	minebot_upgrade = TRUE
 	minebot_exclusive = TRUE
 
-// AOE modkits.
 /obj/item/borg/upgrade/modkit/aoe
 	modifier = 0
 	/// Should the explosion affect turfs as well?
@@ -463,7 +461,6 @@
 	desc = "Causes the kinetic accelerator to damage mobs in an AoE."
 	modifier = 0.2
 
-// Passthrough modkits.
 /obj/item/borg/upgrade/modkit/minebot_passthrough
 	name = "minebot passthrough"
 	desc = "Causes kinetic accelerator shots to pass through minebots."
@@ -500,7 +497,6 @@
 		return
 	LAZYREMOVE(kinetic_gun.ignored_mob_types, typecacheof(/mob/living/carbon/human))
 
-// Tendril-unique modkits.
 /obj/item/borg/upgrade/modkit/cooldown/repeater
 	name = "rapid repeater"
 	desc = "Quarters the kinetic accelerator's cooldown on striking a living target, but greatly increases the base cooldown."
@@ -588,11 +584,11 @@
 	var/mob/living/living_target = target
 	if(!bounties_reaped[living_target.type])
 		return
-	var/kill_modifier = 1
+	var/damage_multiplier = 1
 	if(kinetic_projectile.pressure_decrease_active)
-		kill_modifier *= kinetic_projectile.pressure_decrease
+		damage_multiplier *= kinetic_projectile.pressure_decrease
 	var/armor = living_target.run_armor_check(kinetic_projectile.def_zone, kinetic_projectile.armor_flag, "", "", kinetic_projectile.armour_penetration)
-	living_target.apply_damage(bounties_reaped[living_target.type] * kill_modifier, kinetic_projectile.damage_type, kinetic_projectile.def_zone, armor)
+	living_target.apply_damage(bounties_reaped[living_target.type] * damage_multiplier, kinetic_projectile.damage_type, kinetic_projectile.def_zone, armor)
 
 /obj/item/borg/upgrade/modkit/bounty/proc/get_kill(mob/living/living_target)
 	var/bounty_multiplier = ismegafauna(living_target) ? 4 : 1
@@ -601,7 +597,6 @@
 		return
 	bounties_reaped[living_target.type] = min(bounties_reaped[living_target.type] + (modifier * bounty_multiplier), maximum_bounty)
 
-// Indoors modkits.
 /obj/item/borg/upgrade/modkit/indoors
 	name = "decrease pressure penalty"
 	desc = "A syndicate modification kit that increases the damage a kinetic accelerator does in high pressure environments."
@@ -613,7 +608,6 @@
 /obj/item/borg/upgrade/modkit/indoors/modify_projectile(obj/projectile/kinetic/kinetic_projectile)
 	kinetic_projectile.pressure_decrease *= modifier
 
-// Trigger Guard modkits.
 /obj/item/borg/upgrade/modkit/trigger_guard
 	name = "modified trigger guard"
 	desc = "Allows creatures normally incapable of firing guns to operate the weapon when installed."
@@ -658,7 +652,6 @@
 	log_combat(kinetic_gun, target, "turned on hardmode for", src)
 	qdel(src)
 
-// Chassis cosmetic modkits.
 /obj/item/borg/upgrade/modkit/chassis_mod
 	name = "super chassis"
 	desc = "Makes your KA yellow. All the fun of having a more powerful KA without actually having a more powerful KA."
@@ -710,7 +703,6 @@
 	chassis_name = "hyper-kinetic accelerator"
 	chassis_iconstate = "kineticgun_h"
 
-// Tracer cosmetic modkits.
 /obj/item/borg/upgrade/modkit/tracer
 	name = "white tracer bolts"
 	desc = "Causes kinetic accelerator bolts to have a white tracer trail and explosion."
