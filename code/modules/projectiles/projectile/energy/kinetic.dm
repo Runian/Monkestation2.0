@@ -13,6 +13,12 @@
 	var/pressure_decrease = 0.25
 	var/obj/item/gun/energy/recharge/kinetic_accelerator/kinetic_gun
 	var/Skillbasedweapon = TRUE //monkestation edit that allows you to toggle off the quicker reload chance on hitting minerals
+	/// Should there be an explosion in an area? If so, how big is the area?
+	var/aoe_explosion_range = 0
+	/// If there is an area explosion, should it affect turfs?
+	var/aoe_explosion_affects_turfs = FALSE
+	/// If there is an area explosion, what is the multiplier of the damage dealt to living beings affected by it?
+	var/aoe_explosion_damage_multiplier = 0
 
 /obj/projectile/kinetic/Initialize(mapload)
 	. = ..()
@@ -29,6 +35,7 @@
 	if(. == PROJECTILE_PIERCE_PHASE)
 		return
 	if(kinetic_gun)
+		kinetic_gun.projectile_prehit(src, target)
 		for(var/obj/item/borg/upgrade/modkit/modkit_upgrade as anything in kinetic_gun.modkits)
 			modkit_upgrade.projectile_prehit(src, target, kinetic_gun)
 	if(!pressure_decrease_active && !lavaland_equipment_pressure_check(get_turf(target)))
@@ -57,10 +64,29 @@
 		target_turf = get_turf(src)
 	if(kinetic_gun) //hopefully whoever shot this was not very, very unfortunate.
 		var/list/mods = kinetic_gun.modkits
+		kinetic_gun.projectile_strike_predamage(src, target_turf, target)
 		for(var/obj/item/borg/upgrade/modkit/modkit_upgrade as anything in mods)
 			modkit_upgrade.projectile_strike_predamage(src, target_turf, target, kinetic_gun)
+		kinetic_gun.projectile_strike(src, target_turf, target)
 		for(var/obj/item/borg/upgrade/modkit/modkit_upgrade as anything in mods)
 			modkit_upgrade.projectile_strike(src, target_turf, target, kinetic_gun)
+
+		if(aoe_explosion_range)
+			new /obj/effect/temp_visual/explosion/fast(target_turf)
+			if(aoe_explosion_affects_turfs)
+				for(var/turf_in_range in RANGE_TURFS(2, target_turf) - target_turf)
+					if(!ismineralturf(turf_in_range))
+						continue
+					var/turf/closed/mineral/mineral_turf = turf_in_range
+					mineral_turf.gets_drilled(firer, TRUE)
+			if(aoe_explosion_damage_multiplier)
+				for(var/mob/living/affected_living in range(2, target_turf) - firer - target)
+					if(is_type_in_typecache(affected_living, kinetic_gun.ignored_mob_types))
+						continue
+					var/armor = affected_living.run_armor_check(def_zone, armor_flag, "", "", armour_penetration)
+					affected_living.apply_damage(damage * aoe_explosion_damage_multiplier, damage_type, def_zone, armor)
+					to_chat(affected_living, span_userdanger("You're struck by a [kinetic_gun.name]!"))
+
 	if(ismineralturf(target_turf))
 		var/turf/closed/mineral/M = target_turf
 		M.gets_drilled(firer, TRUE)

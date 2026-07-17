@@ -435,23 +435,3 @@
 		new /obj/item/ammo_casing/shotgun/kinetic(src)
 		new /obj/item/ammo_casing/shotgun/kinetic(src)
 		new /obj/item/ammo_casing/shotgun/kinetic(src)
-
-
-// Pkas
-/obj/item/storage/box/shockwave
-	name = "PK-Shockwave Box"
-	desc = "A box containing a PK-Shockwave and the Shockwave modkit. Designed to create large blasts of powerful kinetic energy for clearing large amounts of rock, or fauna"
-	icon_state = "cyber_implants"
-	icon_preview = /obj/item/gun/energy/recharge/kinetic_accelerator/shockwave::icon
-	icon_state_preview = /obj/item/gun/energy/recharge/kinetic_accelerator/shockwave::icon_state
-
-/obj/item/storage/box/shockwave/Initialize(mapload)
-	. = ..()
-	atom_storage.max_slots = 2
-	atom_storage.max_specific_storage = WEIGHT_CLASS_BULKY
-	atom_storage.max_total_storage = 2
-
-/obj/item/storage/box/shockwave/PopulateContents()
-	new /obj/item/gun/energy/recharge/kinetic_accelerator/shockwave(src)
-	new /obj/item/borg/upgrade/modkit/aoe/turfs/shockwave(src)
-
