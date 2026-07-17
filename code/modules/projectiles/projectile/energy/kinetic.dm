@@ -74,13 +74,13 @@
 		if(aoe_explosion_range)
 			new /obj/effect/temp_visual/explosion/fast(target_turf)
 			if(aoe_explosion_affects_turfs)
-				for(var/turf_in_range in RANGE_TURFS(2, target_turf) - target_turf)
+				for(var/turf_in_range in RANGE_TURFS(aoe_explosion_range, target_turf) - target_turf)
 					if(!ismineralturf(turf_in_range))
 						continue
 					var/turf/closed/mineral/mineral_turf = turf_in_range
 					mineral_turf.gets_drilled(firer, TRUE)
 			if(aoe_explosion_damage_multiplier)
-				for(var/mob/living/affected_living in range(2, target_turf) - firer - target)
+				for(var/mob/living/affected_living in range(aoe_explosion_range, target_turf) - firer - target)
 					if(is_type_in_typecache(affected_living, kinetic_gun.ignored_mob_types))
 						continue
 					var/armor = affected_living.run_armor_check(def_zone, armor_flag, "", "", armour_penetration)
