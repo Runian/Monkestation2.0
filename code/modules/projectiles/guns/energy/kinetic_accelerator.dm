@@ -55,7 +55,6 @@
 	for(var/obj/item/borg/upgrade/modkit/modkit_upgrade as anything in modkits)
 		. += span_notice("There is \a [modkit_upgrade] installed, using <b>[modkit_upgrade.cost]%</b> capacity.")
 
-
 /obj/item/gun/energy/recharge/kinetic_accelerator/item_interaction(mob/living/user, obj/item/tool, list/modifiers)
 	if(!istype(tool, /obj/item/borg/upgrade/modkit))
 		return NONE
@@ -347,10 +346,13 @@
 				continue
 			number_of_denied++
 			if(number_of_denied >= maximum_of_type)
-				to_chat(user, span_notice("The modkit you're trying to install would conflict with an already installed modkit. Remove existing modkits first."))
-				return FALSE
+				. = FALSE
+				break
 	if(cost > kinetic_gun.get_remaining_mod_capacity())
 		to_chat(user, span_notice("You don't have room(<b>[kinetic_gun.get_remaining_mod_capacity()]%</b> remaining, [cost]% needed) to install this modkit. Use a crowbar or right click with an empty hand to remove existing modkits."))
+		return FALSE
+	if(!.) // Telling the user about mod capacity is more important than incompatibility.
+		to_chat(user, span_notice("The modkit you're trying to install would conflict with an already installed modkit. Remove existing modkits first."))
 		return FALSE
 	if(transfer_to_loc && !user.transferItemToLoc(src, kinetic_gun))
 		return FALSE
