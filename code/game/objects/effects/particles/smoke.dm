@@ -84,6 +84,19 @@
 	position = generator(GEN_VECTOR, list(-3, 5, 0), list(3, 6.5, 0), NORMAL_RAND)
 	velocity = generator(GEN_VECTOR, list(-0.1, 0.4, 0), list(0.1, 0.5, 0), NORMAL_RAND)
 
+/particles/smoke/cyborg
+	count = 5
+	spawning = 1
+	lifespan = 1 SECONDS
+	fade = 1.8 SECONDS
+	position = list(0, 0, 0)
+	scale = list(0.5, 0.5)
+	grow = 0.1
+
+/particles/smoke/cyborg/heavy_damage
+	lifespan = 0.8 SECONDS
+	fade = 0.8 SECONDS
+
 /particles/fog
 	icon = 'icons/effects/particles/smoke.dmi'
 	icon_state = list("chill_1" = 2, "chill_2" = 2, "chill_3" = 1)
