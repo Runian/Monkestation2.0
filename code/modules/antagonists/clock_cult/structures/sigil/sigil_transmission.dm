@@ -14,29 +14,18 @@
 	fail_color = "#f1a746"
 	looping = TRUE
 	living_only = FALSE
-	/// A list of structures linked to this sigil
+	/// A list of structures linked to this sigil.
 	var/list/linked_structures = list()
 
 /obj/structure/destructible/clockwork/sigil/transmission/Initialize(mapload)
 	. = ..()
-
 	for(var/obj/structure/destructible/clockwork/gear_base/powered/gear_base in range(src, SIGIL_TRANSMISSION_RANGE))
 		gear_base.link_to_sigil(src)
-	//START_PROCESSING(SSthe_ark, src)
 
 /obj/structure/destructible/clockwork/sigil/transmission/Destroy()
-	//STOP_PROCESSING(SSthe_ark, src)
 	for(var/obj/structure/destructible/clockwork/gear_base/powered/gear_base as anything in linked_structures)
 		gear_base.unlink_to_sigil(src)
-
 	return ..()
-
-/*/obj/structure/destructible/clockwork/sigil/transmission/process()
-	for(var/obj/structure/destructible/clockwork/gear_base/powered/gear_base as anything in linked_structures)
-		if(gear_base.transmission_sigils[1] != src) // [1] Ensures we are the master (first) transmission signal
-			continue
-
-		gear_base.check_transmission_sigils()*/
 
 /obj/structure/destructible/clockwork/sigil/transmission/can_affect(atom/movable/atom_movable)
 	return (ismecha(atom_movable) || iscyborg(atom_movable) || ishuman(atom_movable))
@@ -49,48 +38,53 @@
 		for(var/mob/living/living_mob in target_mech.occupants)
 			if(!IS_CLOCK(living_mob))
 				continue
-
-			is_clockie = TRUE // If one person is a cultist, we just say "they good" to the mech itself
+			is_clockie = TRUE // If one person is a cultist, we just say "they good" to the mech itself!
 			break
 
 		var/obj/item/stock_parts/power_store/cell/power_cell = target_mech.cell
-
 		if(!power_cell)
-			return
+			return FALSE
 
 		if(is_clockie)
 			if((power_cell.charge < power_cell.maxcharge) && SSthe_ark.clock_power >= POWER_GIVE)
 				target_mech.give_power(power_cell.chargerate)
 				SSthe_ark.clock_power -= POWER_GIVE
+				return TRUE
+			return FALSE
 
-		else
-			if(power_cell.charge)
-				target_mech.use_energy(power_cell.chargerate)
-				SSthe_ark.clock_power += POWER_SIPHON
+		if(power_cell.charge)
+			target_mech.use_energy(power_cell.chargerate)
+			SSthe_ark.clock_power += POWER_SIPHON
+			return TRUE
+		return FALSE
 
-	else if(iscyborg(apply_to))
-		var/mob/living/silicon/robot/borg = apply_to
+	if(iscyborg(apply_to))
+		var/mob/living/silicon/robot/target_cyborg = apply_to
 		var/obj/item/stock_parts/power_store/cell/power_cell = borg.get_cell()
 
 		if(!power_cell)
-			return
+			return FALSE
 
 		if(IS_CLOCK(borg))
 			if((power_cell.charge < power_cell.maxcharge) && SSthe_ark.clock_power >= POWER_GIVE)
 				power_cell.give(power_cell.chargerate)
 				SSthe_ark.clock_power -= POWER_GIVE
+				return TRUE
+			return FALSE
 
-		else if(power_cell.charge > power_cell.chargerate)
+		if(power_cell.charge > power_cell.chargerate)
 			power_cell.give(-power_cell.chargerate)
 			SSthe_ark.clock_power += POWER_SIPHON
+			return TRUE
+		return FALSE
 
-	else if(ishuman(apply_to))
+	if(ishuman(apply_to))
 		var/mob/living/carbon/human/human = apply_to
 		var/list/human_contents = human.get_contents()
 
+		. = FALSE
 		for(var/obj/item/content_item as anything in human_contents)
 			var/obj/item/stock_parts/power_store/cell/power_cell = content_item.get_cell()
-
 			if(!power_cell)
 				continue
 
@@ -98,11 +92,13 @@
 				if((power_cell.charge < power_cell.maxcharge) && SSthe_ark.clock_power >= POWER_GIVE)
 					power_cell.give(power_cell.chargerate)
 					SSthe_ark.clock_power -= POWER_GIVE
+					. = TRUE
+				continue
 
-			else
-				if(power_cell.charge > power_cell.chargerate)
-					power_cell.give(-power_cell.chargerate)
-					SSthe_ark.clock_power += POWER_SIPHON
+			if(power_cell.charge > power_cell.chargerate)
+				power_cell.give(-power_cell.chargerate)
+				SSthe_ark.clock_power += POWER_SIPHON
+				. = TRUE
 
 #undef POWER_GIVE
 #undef POWER_SIPHON

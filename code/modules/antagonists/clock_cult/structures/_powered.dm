@@ -24,53 +24,35 @@
 
 /obj/structure/destructible/clockwork/gear_base/powered/Destroy()
 	for(var/obj/structure/destructible/clockwork/sigil/transmission/trans_sigil as anything in transmission_sigils)
-		trans_sigil.linked_structures -= src
+		unlink_to_sigil(trans_sigil)
 	return ..()
 
-/obj/structure/destructible/clockwork/gear_base/powered/attack_hand(mob/user)
+/obj/structure/destructible/clockwork/gear_base/powered/attack_hand(mob/living/user, list/modifiers)
 	if(!IS_CLOCK(user))
 		return ..()
+	try_toggle_power(user)
 
+/obj/structure/destructible/clockwork/gear_base/powered/attack_ai(mob/living/user)
+	if(!IS_CLOCK(user))
+		return ..()
 	try_toggle_power(user)
 
 /obj/structure/destructible/clockwork/gear_base/powered/wrench_act(mob/living/user, obj/item/tool)
 	. = ..()
-	if(!.)
+	if(. == ITEM_INTERACT_BLOCKING)
 		return
-
-	if(anchored)
-		return
-
-	enabled = FALSE
-	turn_off()
-	update_icon_state()
-	visible_message("[src] powers down as it becomes unanchored from the ground.")
+	if(!anchored && turn_off())
+		visible_message("[src] powers down as it becomes unanchored from the ground.")
 
 /obj/structure/destructible/clockwork/gear_base/powered/update_icon_state()
 	. = ..()
-	icon_state = base_icon_state || initial(icon_state)
-
 	if(!anchored)
-		icon_state = base_icon_state + unwrenched_suffix
-		return
-
+		return // Parent already deals with the unwrenched suffix.
 	if(has_off_icon && (!is_powered || !enabled))
-		icon_state = base_icon_state + "_inactive"
+		icon_state += "_inactive"
 		return
-
 	if(has_on_icon && is_powered)
-		icon_state = base_icon_state + "_active"
-
-/obj/structure/destructible/clockwork/gear_base/powered/process(seconds_per_tick)
-	var/last_powered_state = is_powered
-	is_powered = length(transmission_sigils) > 0
-	if(last_powered_state != is_powered)
-		if(is_powered)
-			repowered()
-		else
-			depowered()
-			return FALSE
-	return TRUE
+		icon_state += "_active"
 
 /obj/structure/destructible/clockwork/gear_base/powered/proc/try_toggle_power(mob/user)
 	if(!has_power_toggle)
@@ -95,66 +77,83 @@
 	if(user)
 		balloon_alert(user, "turned [enabled ? "on" : "off"]")
 
-/// Turn on the structure, letting it consume power and process again
+/// Turns on the structure if it isn't on already, letting it passively consume power.
 /obj/structure/destructible/clockwork/gear_base/powered/proc/turn_on()
+	if(enabled)
+		return FALSE
+	enabled = TRUE
 	repowered()
-	START_PROCESSING(SSthe_ark, src)
+	return TRUE
 
-/// Turn off the structure, ceasing its processing
+/// Turns off the structure if it isn't off already.
 /obj/structure/destructible/clockwork/gear_base/powered/proc/turn_off()
+	if(!enabled)
+		return FALSE
+	enabled = FALSE
 	depowered()
-	STOP_PROCESSING(SSthe_ark, src)
+	return TRUE
 
-/// Checks if there's a sigil to power it, calls repower() if changed from depowered to powered, vice versa
+/**
+ * Checks if there's a sigil to power it.
+ *
+ * This will call [repower()] or [depowered()] if it changed from being depowered to powered, vice versa.
+ */
 /obj/structure/destructible/clockwork/gear_base/powered/proc/check_transmission_sigils()
 	if(!enabled)
 		return FALSE
-
 	if(!is_powered)
 		if(length(transmission_sigils))
 			repowered()
 			return TRUE
 		return FALSE
-	else if(!length(transmission_sigils))
+	if(!length(transmission_sigils))
 		depowered()
 		return FALSE
 	return TRUE
 
+/// Checks and changes the power status
 /obj/structure/destructible/clockwork/gear_base/powered/proc/check_powered()
 	is_powered = length(transmission_sigils) > 0
 	return is_powered
 
-/// Uses power if there's enough to do so
+/// Uses power if there's enough to do so.
 /obj/structure/destructible/clockwork/gear_base/powered/proc/use_energy(amount)
 	return (has_power_toggle ? check_transmission_sigils() : check_powered()) && SSthe_ark.adjust_clock_power(-amount)
 
-/// Triggers when the structure runs out of power to use
+/// Triggers when the structure runs out of power to use.
 /obj/structure/destructible/clockwork/gear_base/powered/proc/depowered()
 	SHOULD_CALL_PARENT(TRUE)
 	is_powered = FALSE
 	SSthe_ark.adjust_passive_power(-passive_consumption)
 	update_icon_state()
 
-/// Triggers when the structure regains power to use
+/// Triggers when the structure regains power to use.
 /obj/structure/destructible/clockwork/gear_base/powered/proc/repowered()
 	SHOULD_CALL_PARENT(TRUE)
 	is_powered = length(transmission_sigils) > 0
 	SSthe_ark.adjust_passive_power(passive_consumption)
 	update_icon_state()
 
-/// Adds a sigil to the linked structure list
+/// Adds a sigil to the linked structure list.
 /obj/structure/destructible/clockwork/gear_base/powered/proc/link_to_sigil(obj/structure/destructible/clockwork/sigil/transmission/sigil)
 	LAZYOR(transmission_sigils, sigil)
-	sigil.linked_structures |= src
+	LAZYADD(sigil.linked_structures, src)
+	RegisterSignal(sigil, COMSIG_QDELETING, PROF_REF(on_sigil_qdel))
+	check_transmission_sigils()
 
-/// Removes a sigil from the linked structure list
+/// Removes a sigil from the linked structure list.
 /obj/structure/destructible/clockwork/gear_base/powered/proc/unlink_to_sigil(obj/structure/destructible/clockwork/sigil/transmission/sigil)
 	if(!LAZYFIND(transmission_sigils, sigil))
 		return
-
 	LAZYREMOVE(transmission_sigils, sigil)
-	sigil.linked_structures -= src
+	LAZYREMOVE(sigil.linked_structures, src)
+	UnregisterSignal(sigil, COMSIG_QDELETING)
 	check_transmission_sigils()
+
+/// Unlinks any sigil from us when they get deleted.
+/obj/structure/destructible/clockwork/gear_base/powered/proc/on_sigil_qdel(datum/source)
+	SIGNAL_HANDLER
+	unlink_to_sigil(source)
 
 /datum/component/clockwork_trap/powered_structure
 	takes_input = TRUE
