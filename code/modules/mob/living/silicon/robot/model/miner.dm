@@ -21,6 +21,7 @@
 		/obj/item/gps/cyborg,
 		/obj/item/stack/marker_beacon,
 		/obj/item/borg/apparatus/organ_storage/monster,
+		/obj/item/card/mining_point_card, // Only to benefit from geysers and ore vents.
 	)
 	emagged_modules = list(
 		/obj/item/borg/stun
