@@ -464,6 +464,7 @@
 	response_help_continuous = "pets"
 	response_help_simple = "pet"
 	icon_gib = null
+	gender = MALE
 	gold_core_spawnable = NO_SPAWN
 	ai_controller = /datum/ai_controller/basic_controller/
 	ckeywhitelist = list("Flava-Floh")
@@ -508,6 +509,7 @@
 /mob/living/basic/mothroach/vanilla
 	name = "Vanilla"
 	desc = "A cute mothroach wearing a medical beret."
+	gender = FEMALE
 	icon = 'monkestation/code/modules/donator/icons/mob/pets.dmi'
 	icon_state = "vanilla_mothroach"
 	icon_living = "vanilla_mothroach"
