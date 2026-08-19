@@ -71,9 +71,7 @@
 		if(!case)
 			case = locate(/obj/item/implantcase) in get_turf(target)
 		if(case && !case.imp)
-			case.imp = implant
 			implant.forceMove(case)
-			case.update_appearance()
 			display_results(
 				user,
 				target,

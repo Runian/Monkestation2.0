@@ -504,10 +504,8 @@ GLOBAL_LIST_EMPTY_TYPED(dead_oozeling_cores, /obj/item/organ/internal/brain/slim
 		if(!is_type_in_typecache(curimplant, allowed_implants))
 			continue
 		if(curimplant.removed(victim))
-			var/obj/item/implantcase/case =  new /obj/item/implantcase
-			case.imp = curimplant
+			var/obj/item/implantcase/case = new /obj/item/implantcase
 			curimplant.forceMove(case) //Recase implant it doesn't like to be moved without it.
-			case.update_appearance()
 			process_and_store_item(case, victim)
 
 	for(var/obj/item/organ/organ in victim.organs) // Process and store organ implants and related organs

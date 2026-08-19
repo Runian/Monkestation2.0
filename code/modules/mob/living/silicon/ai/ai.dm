@@ -92,7 +92,8 @@
 
 	var/party_time //party time
 
-	var/mob/living/silicon/robot/deployed_shell = null //For shell control
+	/// The living mob that we are temporarily controlling..
+	var/mob/living/deployed_shell = null
 	var/datum/action/innate/deploy_shell/deploy_action = new
 	var/datum/action/innate/deploy_last_shell/redeploy_action = new
 	var/datum/action/innate/choose_modules/modules_action
@@ -1183,16 +1184,17 @@
 	desc = "Reconnect to the most recently used AI shell."
 	button_icon = 'icons/mob/actions/actions_AI.dmi'
 	button_icon_state = "ai_last_shell"
-	var/mob/living/silicon/robot/last_used_shell
+	/// The last shell that we deployed to.
+	var/mob/living/last_used_shell
 
 /datum/action/innate/deploy_last_shell/Trigger(trigger_flags)
 	if(!owner)
 		return
-	if(last_used_shell)
-		var/mob/living/silicon/ai/AI = owner
-		AI.deploy_to_shell(last_used_shell)
-	else
-		Remove(owner) //If the last shell is blown, destroy it.
+	if(!last_used_shell)
+		Remove(owner) // This action has no reason to exist if we don't have a last known shell.
+		return
+	var/mob/living/silicon/ai/AI = owner
+	AI.deploy_to_shell(last_used_shell)
 
 /mob/living/silicon/ai/proc/disconnect_shell()
 	SIGNAL_HANDLER

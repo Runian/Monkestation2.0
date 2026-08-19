@@ -70,6 +70,4 @@ ADMIN_VERB(manipulate_organs, R_DEBUG, FALSE, "Manipulate Organs", "Manipulate t
 				qdel(organ)
 			else if(I) // Put the implant in case.
 				var/obj/item/implantcase/case = new(get_turf(carbon_victim))
-				case.imp = I
 				I.forceMove(case)
-				case.update_appearance()

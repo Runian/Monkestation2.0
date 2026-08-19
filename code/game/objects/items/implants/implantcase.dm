@@ -18,7 +18,6 @@
 	///Type of implant this will spawn as imp upon being spawned
 	var/imp_type
 
-
 /obj/item/implantcase/update_icon_state()
 	icon_state = "implantcase-[imp ? imp.implant_color : 0]"
 	return ..()
@@ -66,8 +65,18 @@
 
 /obj/item/implantcase/Entered(atom/movable/arrived)
 	. = ..()
-	var/obj/item/implant/I = arrived
-	SEND_SIGNAL(I, COMSIG_IMPLANT_CASED)
+	if(istype(arrived, /obj/item/implant))
+		imp = arrived
+		reagents = imp.reagents
+		SEND_SIGNAL(arrived, COMSIG_IMPLANT_CASED)
+		update_appearance()
+
+/obj/item/implantcase/Exited(atom/movable/gone, direction)
+	. = ..()
+	if(gone == imp)
+		imp = null
+		reagents = null
+		update_appearance()
 
 ///An implant case that spawns with a tracking implant, as well as an appropriate name and description.
 /obj/item/implantcase/tracking
