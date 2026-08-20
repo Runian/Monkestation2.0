@@ -99,6 +99,8 @@
 	alert_control.listener.RegisterSignal(src, COMSIG_LIVING_DEATH, TYPE_PROC_REF(/datum/alarm_listener, prevent_alarm_changes))
 	alert_control.listener.RegisterSignal(src, COMSIG_LIVING_REVIVE, TYPE_PROC_REF(/datum/alarm_listener, allow_alarm_changes))
 
+	addtimer(CALLBACK(src, PROC_REF(prompt_ghosts_if_unborgable)), 2 SECONDS, TIMER_UNIQUE)
+
 /mob/living/silicon/robot/set_suicide(suicide_state)
 	. = ..()
 	if(mmi)
