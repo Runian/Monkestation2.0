@@ -128,7 +128,7 @@
 
 /// Deploys the AI into this shell.
 /obj/item/organ/internal/brain/cybernetic/ai/proc/deploy(mob/living/silicon/ai/deploying_ai)
-	if(deployed)
+	if(deployed || !deploying_ai.mind)
 		return
 	mainframe_ai = deploying_ai
 	mainframe_ai.deployed_shell = owner

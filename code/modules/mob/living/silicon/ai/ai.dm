@@ -1160,8 +1160,7 @@
 		var/obj/item/organ/internal/brain/cybernetic/ai/brain = human.get_organ_slot(ORGAN_SLOT_BRAIN)
 		if(brain.deployed || !(!brain.mainframe_ai || (brain.mainframe_ai == src)))
 			return
-		if(mind)
-			brain_controlling_shell.deploy(src) // Deployment deals with everything from here.
+		brain.deploy(src) // Deployment will deal with everything else from here, including any remaining checks.
 	diag_hud_set_deployed()
 
 /datum/action/innate/deploy_shell
