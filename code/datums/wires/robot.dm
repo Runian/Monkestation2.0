@@ -45,7 +45,7 @@
 					R.set_connected_ai(new_ai)
 					log_silicon("[key_name(usr)] synced [key_name(R)] [R.connected_ai ? "from [key_name(R.connected_ai)]": ""] to [key_name(new_ai)]")
 					if(R.shell)
-						R.undeploy() //If this borg is an AI shell, disconnect the controlling AI and assign ti to a new AI
+						R.mainframe.disconnect_shell() //If this borg is an AI shell, disconnect the controlling AI and assign ti to a new AI
 						R.notify_ai(AI_NOTIFICATION_AI_SHELL)
 					else
 						R.notify_ai(TRUE)
@@ -80,7 +80,7 @@
 				R.notify_ai(AI_NOTIFICATION_CYBORG_DISCONNECTED)
 				log_silicon("[key_name(usr)] cut AI wire on [key_name(R)][R.connected_ai ? " and disconnected from [key_name(R.connected_ai)]": ""]")
 				if(R.shell)
-					R.undeploy()
+					R.mainframe.disconnect_shell()
 				R.set_connected_ai(null)
 			R.logevent("AI connection fault [mend?"cleared":"detected"]")
 		if(WIRE_LAWSYNC) // Cut the law wire, and the borg will no longer receive law updates from its AI. Repair and it will re-sync.

@@ -552,7 +552,7 @@
 	. = ..()
 	if(!. || !borg.shell)
 		return .
-	borg.undeploy()
+	borg.mainframe.disconnect_shell()
 	borg.notify_ai(AI_NOTIFICATION_AI_SHELL)
 
 /obj/item/borg/upgrade/expand

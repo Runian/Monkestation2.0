@@ -1135,7 +1135,7 @@
 			var/mob/living/carbon/human/human = borgie
 			var/obj/item/organ/internal/brain/cybernetic/ai/brain = human.get_organ_slot(ORGAN_SLOT_BRAIN)
 			// Checks if the AI-uplink is unowned OR ours, and if our body is augmented sufficiently.
-			if((brain.mainframe_ai == null || brain.mainframe_ai == src) && (brain && brain.check_if_augmented()))
+			if((brain.mainframe_ai == null || brain.mainframe_ai == src) && (brain && brain.is_sufficiently_augmented()))
 				possible += human
 
 	if(!LAZYLEN(possible))
@@ -1143,29 +1143,25 @@
 	if(!target || !(target in possible)) //If the AI is looking for a new shell, or its pre-selected shell is no longer valid
 		target = tgui_input_list(src, "Which body to control?", "Direct Control", sort_names(possible))
 
-	if(isnull(target))
+	if(isnull(target) || target.stat == DEAD)
 		return
 
 	if(iscyborg(target))
 		var/mob/living/silicon/robot/shell = target
-		if(shell.stat == DEAD || shell.deployed || !(!shell.connected_ai || (shell.connected_ai == src)))
+		if(shell.deployed || !(!shell.connected_ai || (shell.connected_ai == src)))
 			return
-
-	if(ishuman(target)) // If it is an AI-uplink organic
+		if(mind)
+			RegisterSignal(shell, COMSIG_LIVING_DEATH, PROC_REF(disconnect_shell))
+			deployed_shell = shell
+			shell.deploy_init(src)
+			mind.transfer_to(shell)
+	else if(ishuman(target))
 		var/mob/living/carbon/human/human = target
 		var/obj/item/organ/internal/brain/cybernetic/ai/brain = human.get_organ_slot(ORGAN_SLOT_BRAIN)
-		if(human.stat == DEAD || brain.deployed || !(!brain.mainframe_ai || (brain.mainframe_ai == src)))
+		if(brain.deployed || !(!brain.mainframe_ai || (brain.mainframe_ai == src)))
 			return
-
-	if(mind)
-		if(ishuman(target))
-			deployed_shell = target.get_organ_by_type(/obj/item/organ/internal/brain/cybernetic/ai)
-		if(iscyborg(target))
-			RegisterSignal(target, COMSIG_LIVING_DEATH, PROC_REF(disconnect_shell))
-			deployed_shell = target
-		deployed_shell.deploy_init(src)
-		if(mind) // Checking, for human shells handle mind transfer within deploy_init()
-			mind.transfer_to(target)
+		if(mind)
+			brain_controlling_shell.deploy(src) // Deployment deals with everything from here.
 	diag_hud_set_deployed()
 
 /datum/action/innate/deploy_shell
@@ -1197,11 +1193,19 @@
 	var/mob/living/silicon/ai/AI = owner
 	AI.deploy_to_shell(last_used_shell)
 
-/mob/living/silicon/ai/proc/disconnect_shell()
+/// Disconnects the AI from their deployed shell if they were deployed to one.
+/mob/living/silicon/ai/proc/disconnect_shell(silent = FALSE)
 	SIGNAL_HANDLER
-	if(deployed_shell) //Forcibly call back AI in event of things such as damage, EMP or power loss.
-		to_chat(src, span_danger("Your remote connection has been reset!"))
-		deployed_shell.undeploy()
+	if(!deployed_shell)
+		if(!silent)
+			to_chat(src, span_danger("Your remote connection has been reset!"))
+		if(iscyborg(deployed_shell))
+			var/mob/living/silicon/robot/deployed_cyborg = deployed_shell
+			deployed_cyborg.undeploy()
+		if(iscarbon(deployed_shell))
+			var/mob/living/carbon/deployed_carbon = deployed_shell
+			var/obj/item/organ/internal/brain/cybernetic/ai/brain_controlling_shell = deployed_carbon.get_organ_by_type(/obj/item/organ/internal/brain/cybernetic/ai)
+			brain_controlling_shell.undeploy()
 	diag_hud_set_deployed()
 
 /mob/living/silicon/ai/resist()

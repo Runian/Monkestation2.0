@@ -8,7 +8,6 @@
 	if(!..())
 		return FALSE
 	var/obj/item/organ/internal/brain/cybernetic/ai/shell_to_disconnect = owner.get_organ_by_type(/obj/item/organ/internal/brain/cybernetic/ai)
-
 	shell_to_disconnect.undeploy()
 	return TRUE
 
@@ -23,7 +22,6 @@
 	var/datum/action/innate/brain_undeployment/undeployment_action = new
 	/// A weakref to our imaginary brain radio implant.
 	var/datum/weakref/radio_weakref
-
 
 /obj/item/organ/internal/brain/cybernetic/ai/Initialize(mapload)
 	. = ..()
@@ -130,67 +128,63 @@
 
 /// Deploys the AI into this shell.
 /obj/item/organ/internal/brain/cybernetic/ai/proc/deploy(mob/living/silicon/ai/deploying_ai)
-	mainframe = deploying_ai
-	mainframe.deployed_shell = owner
-	mainframe.mind.transfer_to(owner)
-	mainframe = AI
-	connected_ai = AI
-	last_connected_ai = AI
-	mainframe.connected_ipcs |= owner
-	RegisterSignal(owner, COMSIG_LIVING_DEATH, PROC_REF(undeploy))
-	RegisterSignal(AI, COMSIG_QDELETING, PROC_REF(ai_deleted))
+	if(deployed)
+		return
+	mainframe_ai = deploying_ai
+	mainframe_ai.deployed_shell = owner
+	deployed = TRUE
+
+	RegisterSignal(owner, list(COMSIG_LIVING_DEATH, COMSIG_QDELETING), PROC_REF(undeploy))
+	RegisterSignal(mainframe_ai, COMSIG_QDELETING, PROC_REF(ai_deleted))
+
 	undeployment_action.Grant(owner)
 	update_med_hud_status(owner)
 
+	deploying_ai.mind.transfer_to(owner)
 	owner.add_traits(list(TRAIT_SILICON_ACCESS), REF(src))
 	ADD_TRAIT(mainframe_ai.mind, TRAIT_UNCONVERTABLE, REF(src))
 	ADD_TRAIT(mainframe_ai, TRAIT_MIND_TEMPORARILY_GONE, REF(src))
-	AI.mind.transfer_to(owner)
-	deployed = TRUE
 	to_chat(owner, span_boldbig("You are still considered a silicon/cyborg/AI. Follow your laws."))
 
 	var/obj/item/implant/radio/implant = radio_weakref.resolve()
-	if(!implant?.radio || !AI.radio)
+	if(!implant?.radio || !deploying_ai.radio)
 		return
-	if(AI.radio.syndie) /// AI has Syndie radio if traitor.
-		AI.radio.make_syndie()
+	if(deploying_ai.radio.syndie) /// AI has Syndie radio if traitor.
+		deploying_ai.radio.make_syndie()
 	implant.radio.subspace_transmission = TRUE
 	implant.radio.command = TRUE
-	implant.radio.channels = AI.radio.channels
+	implant.radio.channels = deploying_ai.radio.channels
 	for(var/channel in implant.radio.channels)
 		LAZYSET(implant.radio.secure_radio_connections, channel, add_radio(implant.radio, GLOB.radiochannels[channel]))
 
 /// Handles exiting the shell.
 /obj/item/organ/internal/brain/cybernetic/ai/proc/undeploy(datum/source)
 	SIGNAL_HANDLER
-	if(!owner?.mind || !mainframe_ai)
+	if(!deployed || !mainframe_ai || !owner?.mind)
 		return
 	UnregisterSignal(owner, list(COMSIG_LIVING_DEATH, COMSIG_QDELETING))
 	UnregisterSignal(mainframe_ai, COMSIG_QDELETING)
-	var/last_loc = owner.loc
+
 	mainframe_ai.redeploy_action.Grant(mainframe_ai)
 	mainframe_ai.redeploy_action.last_used_shell = owner
-	owner.mind.transfer_to(mainframe_ai)
-	deployed = FALSE
-	mainframe_ai.deployed_shell = null
 	undeployment_action.Remove(owner)
-	if(mainframe_ai.laws)
-		mainframe_ai.laws.show_laws(mainframe_ai)
-	if(mainframe_ai.eyeobj)
-		mainframe_ai.eyeobj.setLoc(last_loc)
-		last_loc = null
+	update_med_hud_status(owner)
+
+	owner.mind.transfer_to(mainframe_ai)
+	owner.remove_traits(list(TRAIT_SILICON_ACCESS), REF(src)) // All access shall only be available while the shell is active.
 	REMOVE_TRAIT(mainframe_ai.mind, TRAIT_UNCONVERTABLE, REF(src))
 	REMOVE_TRAIT(mainframe_ai, TRAIT_MIND_TEMPORARILY_GONE, REF(src))
-	owner.remove_traits(list(TRAIT_SILICON_ACCESS), REF(src)) // we don't want randoms using our body as free AA, so we only have it when we active.
+
+	mainframe_ai.deployed_shell = null
+	deployed = FALSE
+	if(mainframe_ai.eyeobj)
+		mainframe_ai.eyeobj.setLoc(owner.loc)
 	var/obj/item/implant/radio/implant = radio_weakref.resolve()
 	if(implant)
 		implant.radio.resetChannels()
-	get_status_tab_item()
-	update_med_hud_status(owner)
-
 
 /// Checks if the owner is sufficiently augmented with robotic organs.
-/obj/item/organ/brain/cybernetic/ai/proc/is_sufficiently_augmented()
+/obj/item/organ/internal/brain/cybernetic/ai/proc/is_sufficiently_augmented()
 	if(!iscarbon(owner))
 		return FALSE
 	var/mob/living/carbon/carbon_owner = owner
@@ -237,13 +231,13 @@
 	if(is_sufficiently_augmented())
 		GLOB.available_ai_shells |= owner
 		return
-	if(connected_ai)
+	if(deployed)
 		to_chat(owner, span_danger("Connection failure. Organic organs detected."))
 		undeploy()
 	GLOB.available_ai_shells -= owner
 
-/// Called when connected AI's original body dies or gets deleted.
-/obj/item/organ/internal/brain/cybernetic/ai/proc/ai_killed_or_deleted(datum/source)
+/// Called when connected AI's original body gets deleted.
+/obj/item/organ/internal/brain/cybernetic/ai/proc/ai_deleted(datum/source)
 	SIGNAL_HANDLER
 	to_chat(owner, span_danger("Your core has been rendered inoperable..."))
 	undeploy()

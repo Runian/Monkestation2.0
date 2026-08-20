@@ -78,8 +78,8 @@
 	if(.)
 		return
 	var/mob/living/silicon/robot/shell/our_shell = user.mob
-	//We make sure our shell is actually a shell
+	// We make sure our shell is actually a shell.
 	if(our_shell.shell == FALSE)
 		return
-	our_shell.undeploy()
+	our_shell.mainframe.disconnect_shell()
 	return TRUE

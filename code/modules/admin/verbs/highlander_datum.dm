@@ -24,8 +24,7 @@ GLOBAL_DATUM(highlander_controller, /datum/highlander_controller)
 	for(var/mob/living/silicon/ai/AI in GLOB.player_list)
 		if(!istype(AI) || AI.stat == DEAD)
 			continue
-		if(AI.deployed_shell)
-			AI.deployed_shell.undeploy()
+		AI.disconnect_shell(TRUE)
 		AI.change_mob_type(/mob/living/silicon/robot , null, null)
 		AI.gib()
 
