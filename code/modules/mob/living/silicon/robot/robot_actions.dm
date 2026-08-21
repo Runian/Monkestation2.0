@@ -269,3 +269,24 @@
 	SIGNAL_HANDLER
 	if(active)
 		overlays += shield_overlay
+
+//
+// Syndicate MMI
+//
+
+/datum/action/cyborg_override_lockdown
+	name = "Override Lockdown"
+	desc = "Unlocks and hides you from the robotics console."
+	button_icon = 'icons/mob/actions/actions_silicon.dmi'
+	button_icon_state = "override_lockdown"
+
+/datum/action/cyborg_override_lockdown/IsAvailable(feedback = FALSE)
+	if(!iscyborg(owner))
+		return FALSE
+	return ..()
+
+/datum/action/cyborg_override_lockdown/Trigger(trigger_flags)
+	. = ..()
+	if(!.)
+		return
+	var/mob/living/silicon/robot/cyborg_owner = owner

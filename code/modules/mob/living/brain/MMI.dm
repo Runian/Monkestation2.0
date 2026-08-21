@@ -151,11 +151,11 @@
 	if(!brain)
 		radio.set_on(!radio.is_on())
 		to_chat(user, span_notice("You toggle [src]'s radio system [radio.is_on() == TRUE ? "on" : "off"]."))
-	else
-		eject_brain(user)
-		update_appearance()
-		name = initial(name)
-		to_chat(user, span_notice("You unlock and upend [src], spilling the brain onto the floor."))
+		return
+	eject_brain(user)
+	update_appearance()
+	name = initial(name)
+	to_chat(user, span_notice("You unlock and upend [src], spilling the brain onto the floor."))
 
 /obj/item/mmi/proc/eject_brain(mob/user)
 	if(brainmob)
@@ -220,7 +220,6 @@
 		var/mob/living/brain/old_brainmob = .
 		old_brainmob.add_traits(list(TRAIT_IMMOBILIZED, TRAIT_HANDS_BLOCKED), BRAIN_UNAIDED)
 
-
 /// Proc to hook behavior associated to the change in value of the [obj/vehicle/sealed/var/mecha] variable.
 /obj/item/mmi/proc/set_mecha(obj/vehicle/sealed/mecha/new_mecha)
 	if(mecha == new_mecha)
@@ -232,7 +231,6 @@
 			brainmob.remove_traits(list(TRAIT_IMMOBILIZED, TRAIT_HANDS_BLOCKED), BRAIN_UNAIDED)
 	else if(. && brainmob) // There was a mecha, there no longer is one, and there is a brain mob that is now again unaided.
 		brainmob.add_traits(list(TRAIT_IMMOBILIZED, TRAIT_HANDS_BLOCKED), BRAIN_UNAIDED)
-
 
 /obj/item/mmi/proc/replacement_ai_name()
 	return brainmob.name
@@ -259,15 +257,14 @@
 		return
 	if(!brainmob || iscyborg(loc))
 		return
-	else
-		switch(severity)
-			if(1)
-				brainmob.emp_damage = min(brainmob.emp_damage + rand(20,30), 30)
-			if(2)
-				brainmob.emp_damage = min(brainmob.emp_damage + rand(10,20), 30)
-			if(3)
-				brainmob.emp_damage = min(brainmob.emp_damage + rand(0,10), 30)
-		brainmob.emote("alarm")
+	switch(severity)
+		if(1)
+			brainmob.emp_damage = min(brainmob.emp_damage + rand(20,30), 30)
+		if(2)
+			brainmob.emp_damage = min(brainmob.emp_damage + rand(10,20), 30)
+		if(3)
+			brainmob.emp_damage = min(brainmob.emp_damage + rand(0,10), 30)
+	brainmob.emote("alarm")
 
 /obj/item/mmi/deconstruct(disassembled = TRUE)
 	if(brain)
@@ -367,6 +364,7 @@
 		. += "\t[span_info("AIs will be created with an unique lawset designed to assist the Syndicate.")]"
 		. += "\t[span_info("Cyborgs will have a superceding and irremovable law zero to assist the Syndicate.")]"
 		. += "\t[span_info("Cyborgs may be connected to a master AI, but are not obligated to follow their orders.")]"
+		. += "\t[span_info("Cyborgs gain the ability to override remote lockdowns as long they are not emagged.")]"
 
 /obj/item/mmi/syndie/get_updated_brainwash_directive(mob/living/user)
 	return "[user.real_name] is part of the Syndicate! Assist the Syndicate to the best of your abilities."
