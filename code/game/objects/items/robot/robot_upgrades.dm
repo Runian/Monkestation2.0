@@ -567,19 +567,15 @@
 	if(borg.hasExpanded)
 		to_chat(usr, span_warning("This unit already has an expand module installed!"))
 		return FALSE
-	ADD_TRAIT(borg, TRAIT_NO_TRANSFORM, REF(src))
-	var/prev_lockcharge = borg.lockcharge
-	borg.SetLockdown(TRUE)
+	borg.add_traits(list(TRAIT_NO_TRANSFORM, TRAIT_INCAPACITATED, TRAIT_IMMOBILIZED), REF(src))
 	borg.set_anchored(TRUE)
 	do_smoke(1, borg, borg.loc)
 	sleep(0.2 SECONDS)
 	for(var/i in 1 to 4)
 		playsound(borg, pick('sound/items/drill_use.ogg', 'sound/items/jaws_cut.ogg', 'sound/items/jaws_pry.ogg', 'sound/items/welder.ogg', 'sound/items/ratchet.ogg'), 80, TRUE, -1)
 		sleep(1.2 SECONDS)
-	if(!prev_lockcharge)
-		borg.SetLockdown(FALSE)
+	borg.remove_traits(list(TRAIT_NO_TRANSFORM, TRAIT_INCAPACITATED, TRAIT_IMMOBILIZED), REF(src))
 	borg.set_anchored(FALSE)
-	REMOVE_TRAIT(borg, TRAIT_NO_TRANSFORM, REF(src))
 	borg.hasExpanded = TRUE
 	borg.update_transform(2)
 

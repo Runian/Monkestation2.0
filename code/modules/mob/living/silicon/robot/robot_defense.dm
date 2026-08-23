@@ -304,12 +304,22 @@ GLOBAL_LIST_INIT(blacklisted_borg_hats, typecacheof(list( //Hats that don't real
 	if(!(. & EMP_PROTECT_SELF))
 		switch(severity)
 			if(EMP_HEAVY)
-				Stun(16 SECONDS)
+				emp_knockout(16 SECONDS)
 			if(EMP_LIGHT)
-				Stun(6 SECONDS)
+				emp_knockout(6 SECONDS)
 	if(!(. & EMP_PROTECT_CONTENTS))
 		for(var/obj/item/active_module in held_items)
 			active_module.emp_act(active_module)
+
+/// Makes the cyborg unconscious for a period of time.
+/mob/living/silicon/robot/proc/emp_knockout(deciseconds)
+	set_stat(UNCONSCIOUS)
+	addtimer(CALLBACK(src, PROC_REF(wake_from_emp)), deciseconds, TIMER_UNIQUE | TIMER_OVERRIDE | TIMER_DELETE_ME)
+
+/// Makes the cyborg conscious.
+/mob/living/silicon/robot/proc/wake_from_emp()
+	set_stat(CONSCIOUS)
+	update_stat()
 
 /mob/living/silicon/robot/emag_act(mob/user, obj/item/card/emag/emag_card)
 	if(user == src)//To prevent syndieborgs from emagging themselves
@@ -419,6 +429,18 @@ GLOBAL_LIST_INIT(blacklisted_borg_hats, typecacheof(list( //Hats that don't real
 				adjustBruteLoss(30)
 
 	return TRUE
+
+/mob/living/silicon/robot/hitby(atom/movable/hitting_atom, skipcatch, hitpush, blocked, datum/thrownthing/throwingdatum)
+	. = ..()
+	if(. == SUCCESSFUL_BLOCK || has_movespeed_modifier(/datum/movespeed_modifier/borg_throw))
+		return
+	add_movespeed_modifier(/datum/movespeed_modifier/borg_throw)
+	var/obj/item/thrown_item = hitting_atom
+	addtimer(CALLBACK(src, PROC_REF(clear_throw_slowdown)), (thrown_item.throwforce / 10) SECONDS)
+
+/// Removes the slowdown associated with being hit by an thrown item.
+/mob/living/silicon/robot/proc/clear_throw_slowdown()
+	remove_movespeed_modifier(/datum/movespeed_modifier/borg_throw)
 
 /mob/living/silicon/robot/bullet_act(obj/projectile/hitting_projectile, def_zone, piercing_hit = FALSE)
 	. = ..()

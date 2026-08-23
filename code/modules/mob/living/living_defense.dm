@@ -199,10 +199,10 @@
 	if(!client?.imode.set_combat_mode(new_mode, silent))
 		istate = ISTATE_HARM|ISTATE_BLOCKING
 
-/mob/living/hitby(atom/movable/AM, skipcatch, hitpush = TRUE, blocked = FALSE, datum/thrownthing/throwingdatum)
-	if(!isitem(AM))
+/mob/living/hitby(atom/movable/hitting_atom, skipcatch, hitpush = TRUE, blocked = FALSE, datum/thrownthing/throwingdatum)
+	if(!isitem(hitting_atom))
 		// Filled with made up numbers for non-items.
-		if(check_block(AM, 30, "\the [AM.name]", THROWN_PROJECTILE_ATTACK, 0, BRUTE) & SUCCESSFUL_BLOCK)
+		if(check_block(hitting_atom, 30, "\the [hitting_atom.name]", THROWN_PROJECTILE_ATTACK, 0, BRUTE) & SUCCESSFUL_BLOCK)
 			hitpush = FALSE
 			skipcatch = TRUE
 			blocked = TRUE
@@ -211,11 +211,11 @@
 			playsound(loc, 'sound/weapons/genhit.ogg', 50, TRUE, -1) //Item sounds are handled in the item itself
 		return ..()
 
-	var/obj/item/thrown_item = AM
+	var/obj/item/thrown_item = hitting_atom
 	if(thrown_item.thrownby == WEAKREF(src)) //No throwing stuff at yourself to trigger hit reactions
 		return ..()
 
-	if(check_block(AM, thrown_item.throwforce, "\the [thrown_item.name]", THROWN_PROJECTILE_ATTACK, 0, thrown_item.damtype))
+	if(check_block(hitting_atom, thrown_item.throwforce, "\the [thrown_item.name]", THROWN_PROJECTILE_ATTACK, 0, thrown_item.damtype))
 		hitpush = FALSE
 		skipcatch = TRUE
 		blocked = TRUE
@@ -242,7 +242,7 @@
 			emote("scream", intentional=FALSE)
 		return
 	var/armor = run_armor_check(zone, MELEE, "Your armor has protected your [parse_zone(zone)].", "Your armor has softened hit to your [parse_zone(zone)].", thrown_item.armour_penetration, thrown_item.armour_ignorance, FALSE, thrown_item.weak_against_armour)
-	if(istype(AM, /obj/item/slasher_machette))
+	if(istype(hitting_atom, /obj/item/slasher_machette))
 		if(istype(thrown_by) && IS_SLASHER(thrown_by)) // Must be slasher must have a mind and slasher antag datum.
 			apply_damage(5, thrown_item.damtype, zone, armor, sharpness = thrown_item.get_sharpness(), wound_bonus = (nosell_hit * CANT_WOUND))
 		else

@@ -129,7 +129,7 @@
 		new_borg.cell = new /obj/item/stock_parts/power_store/cell/upgraded/plus(new_borg, robot_cell_charge)
 
 		// So he can't jump out the gate right away.
-		new_borg.SetLockdown()
+		new_borg.add_traits(list(TRAIT_INCAPACITATED, TRAIT_IMMOBILIZED), REF(src))
 		if(master_ai && new_borg.connected_ai != master_ai)
 			new_borg.set_connected_ai(master_ai)
 			new_borg.lawsync()
@@ -142,5 +142,5 @@
 	playsound(src.loc, 'sound/machines/ping.ogg', 50, FALSE)
 	sleep(3 SECONDS)
 	if(new_borg)
-		new_borg.SetLockdown(FALSE)
+		new_borg.remove_traits(list(TRAIT_INCAPACITATED, TRAIT_IMMOBILIZED), REF(src))
 		new_borg.notify_ai(AI_NOTIFICATION_NEW_BORG)

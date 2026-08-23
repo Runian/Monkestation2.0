@@ -1106,7 +1106,7 @@
 	for(var/atom/movable/location as anything in get_nested_locs(src) + src)
 		LAZYREMOVEASSOC(location.important_recursive_contents, RECURSIVE_CONTENTS_ACTIVE_STORAGE, src)
 
-///Sets the anchored var and returns if it was sucessfully changed or not.
+/// Sets the anchored var and returns if it was successfully changed or not.
 /atom/movable/proc/set_anchored(anchorvalue)
 	SHOULD_CALL_PARENT(TRUE)
 	if(anchored == anchorvalue)
