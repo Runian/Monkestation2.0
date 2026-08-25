@@ -432,15 +432,9 @@ GLOBAL_LIST_INIT(blacklisted_borg_hats, typecacheof(list( //Hats that don't real
 
 /mob/living/silicon/robot/hitby(atom/movable/hitting_atom, skipcatch, hitpush, blocked, datum/thrownthing/throwingdatum)
 	. = ..()
-	if(. == SUCCESSFUL_BLOCK || has_movespeed_modifier(/datum/movespeed_modifier/borg_throw))
+	if(. == SUCCESSFUL_BLOCK || AM.throwforce < CYBORG_THROW_SLOWDOWN_THRESHOLD)
 		return
-	add_movespeed_modifier(/datum/movespeed_modifier/borg_throw)
-	var/obj/item/thrown_item = hitting_atom
-	addtimer(CALLBACK(src, PROC_REF(clear_throw_slowdown)), (thrown_item.throwforce / 10) SECONDS)
-
-/// Removes the slowdown associated with being hit by an thrown item.
-/mob/living/silicon/robot/proc/clear_throw_slowdown()
-	remove_movespeed_modifier(/datum/movespeed_modifier/borg_throw)
+	apply_status_effect(/datum/status_effect/borg_throw_slow)
 
 /mob/living/silicon/robot/bullet_act(obj/projectile/hitting_projectile, def_zone, piercing_hit = FALSE)
 	. = ..()
