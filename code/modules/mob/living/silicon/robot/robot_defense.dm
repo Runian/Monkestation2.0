@@ -306,7 +306,7 @@ GLOBAL_LIST_INIT(blacklisted_borg_hats, typecacheof(list( //Hats that don't real
 			if(EMP_HEAVY)
 				Stun(16 SECONDS)
 			if(EMP_LIGHT)
-				Stun(16 SECONDS)
+				Stun(6 SECONDS)
 	if(!(. & EMP_PROTECT_CONTENTS))
 		for(var/obj/item/active_module in held_items)
 			active_module.emp_act(active_module)
