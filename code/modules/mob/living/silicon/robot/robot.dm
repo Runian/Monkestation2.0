@@ -591,10 +591,15 @@
 /mob/living/silicon/robot/update_stat()
 	if(HAS_TRAIT(src, TRAIT_GODMODE))
 		return
-	if(stat != DEAD && health <= -maxHealth) // Die only once.
-		death()
-		toggle_headlamp(TRUE)
-		return
+	if(stat != DEAD)
+		if(health <= -maxHealth) //die only once
+			death()
+			toggle_headlamp(1)
+		else
+			if(HAS_TRAIT(src, TRAIT_KNOCKEDOUT) || IsStun() || IsKnockdown() || IsParalyzed())
+				set_stat(UNCONSCIOUS)
+			else
+				set_stat(CONSCIOUS)
 	diag_hud_set_status()
 	diag_hud_set_health()
 	diag_hud_set_aishell()
@@ -610,7 +615,6 @@
 		builtInCamera.toggle_cam(src, 0)
 	if(full_heal_flags & HEAL_ADMIN)
 		locked = TRUE
-	set_stat(CONSCIOUS)
 	notify_ai(AI_NOTIFICATION_NEW_BORG)
 	toggle_headlamp(FALSE, TRUE) //This will reenable borg headlamps if doomsday is currently going on still.
 	return TRUE
