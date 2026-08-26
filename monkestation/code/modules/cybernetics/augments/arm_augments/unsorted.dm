@@ -237,7 +237,7 @@
 	if(istype(maybegun,/obj/item/gun/energy))
 		var/obj/item/gun/energy/egun = maybegun
 		our_gun = egun
-		RegisterSignal(egun.cell,COMSIG_CELL_CHANGE_POWER, PROC_REF(update_hud_elements))
+		RegisterSignal(egun.cell, COMSIG_CELL_POWER_GIVEN, PROC_REF(update_hud_elements))
 
 	update_hud_elements()
 
@@ -252,7 +252,7 @@
 
 	if(istype(maybegun,/obj/item/gun/energy))
 		var/obj/item/gun/energy/egun = maybegun
-		UnregisterSignal(egun.cell,COMSIG_CELL_CHANGE_POWER)
+		UnregisterSignal(egun.cell, COMSIG_CELL_POWER_GIVEN)
 
 
 	our_gun = null

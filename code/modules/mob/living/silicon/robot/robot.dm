@@ -889,13 +889,6 @@
 		for(var/i in connected_ai.aicamera.stored)
 			aicamera.stored[i] = TRUE
 
-/mob/living/silicon/robot/proc/charge(datum/source, amount, repairs, sendmats)
-	SIGNAL_HANDLER
-	if(cell)
-		cell.charge = min(cell.charge + amount, cell.maxcharge)
-	if(repairs)
-		heal_bodypart_damage(repairs, repairs)
-
 /mob/living/silicon/robot/proc/set_connected_ai(new_ai)
 	if((connected_ai == new_ai) || centcom)
 		return
@@ -933,6 +926,13 @@
 		GLOB.fire_appearances[fire_icon] = new_fire_overlay
 
 	return GLOB.fire_appearances[fire_icon]
+
+/// Charges the cyborg with power. Repairs are optional.
+/mob/living/silicon/robot/proc/charge(datum/source, amount, repairs)
+	SIGNAL_HANDLER
+	cell?.give(amount)
+	if(repairs)
+		heal_bodypart_damage(repairs, repairs)
 
 /// Uses a certain amount of power from the cyborg and deals with the impact of doing so.
 /mob/living/silicon/robot/proc/draw_power(power_to_draw, force)

@@ -132,8 +132,8 @@
 /// from base of atom/eminence_act() : (mob/living/eminence/user)
 #define COMSIG_ATOM_EMINENCE_ACT "atom_eminence_act"
 
-///Called by either cell/proc/give or cell/proc/use
-#define COMSIG_CELL_CHANGE_POWER "cell_change_power"
+/// Called by either cell/proc/give or cell/proc/use
+#define COMSIG_CELL_POWER_GIVEN "cell_change_power"
 
 /// generic turf checker signal
 #define COMSIG_CHECK_TURF_GENERIC "check_turf_generic"

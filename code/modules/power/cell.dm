@@ -42,33 +42,6 @@
 		return
 	. += mutable_appearance('icons/obj/power.dmi', "cell-[charge_light_type]-o[(percent() >= 99.5) ? 2 : 1]")
 
-/obj/item/stock_parts/power_store/cell/vv_edit_var(vname, vval)
-	if(vname == NAMEOF(src, charge))
-		charge = clamp(vval, 0, maxcharge)
-		return TRUE
-	if(vname == NAMEOF(src, maxcharge))
-		if(charge > vval)
-			charge = vval
-	if(vname == NAMEOF(src, corrupted) && vval && !corrupted)
-		corrupt(TRUE)
-		return TRUE
-	return ..()
-
-// use power from a cell
-/obj/item/stock_parts/power_store/cell/use(used, force)
-	SHOULD_CALL_PARENT(FALSE) // MONKE EDIT: For some reason there's a parent call, but im going to ignore it
-	var/power_used = min(used, charge)
-	if(rigged && power_used > 0)
-		explode()
-		return 0 // The cell decided to explode so we won't be able to use it.
-	if(!force && charge < used)
-		return 0
-	charge -= power_used
-	if(!istype(loc, /obj/machinery/power/apc))
-		SSblackbox.record_feedback("tally", "cell_used", 1, type)
-	SEND_SIGNAL(src, COMSIG_CELL_CHANGE_POWER) // MONKE EDIT: Signal being sent
-	return power_used
-
 /obj/item/stock_parts/power_store/cell/suicide_act(mob/living/user)
 	user.visible_message(span_suicide("[user] is licking the electrodes of [src]! It looks like [user.p_theyre()] trying to commit suicide!"))
 	return FIRELOSS
