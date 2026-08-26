@@ -54,19 +54,19 @@
 		else
 			hud_used.healths.icon_state = "health7"
 
+/// Deals with the alert associated with the cyborg's cell and its percentage of remaining power.
 /mob/living/silicon/robot/proc/update_cell_hud_icon()
-	if(cell)
-		var/cellcharge = cell.charge/cell.maxcharge
-		switch(cellcharge)
-			if(0.75 to INFINITY)
-				clear_alert(ALERT_CHARGE)
-			if(0.5 to 0.75)
-				throw_alert(ALERT_CHARGE, /atom/movable/screen/alert/lowcell, 1)
-			if(0.25 to 0.5)
-				throw_alert(ALERT_CHARGE, /atom/movable/screen/alert/lowcell, 2)
-			if(0.01 to 0.25)
-				throw_alert(ALERT_CHARGE, /atom/movable/screen/alert/lowcell, 3)
-			else
-				throw_alert(ALERT_CHARGE, /atom/movable/screen/alert/emptycell)
-	else
+	if(!cell)
 		throw_alert(ALERT_CHARGE, /atom/movable/screen/alert/nocell)
+		return
+	switch(cell.percent())
+		if(75 to INFINITY)
+			clear_alert(ALERT_CHARGE)
+		if(50 to 75)
+			throw_alert(ALERT_CHARGE, /atom/movable/screen/alert/lowcell, 1)
+		if(25 to 50)
+			throw_alert(ALERT_CHARGE, /atom/movable/screen/alert/lowcell, 2)
+		if(1 to 25)
+			throw_alert(ALERT_CHARGE, /atom/movable/screen/alert/lowcell, 3)
+		else
+			throw_alert(ALERT_CHARGE, /atom/movable/screen/alert/emptycell)

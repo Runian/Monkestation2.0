@@ -296,8 +296,9 @@ GLOBAL_LIST_INIT(blacklisted_borg_hats, typecacheof(list( //Hats that don't real
 		return
 
 /mob/living/silicon/robot/fire_act()
-	if(!on_fire) //Silicons don't gain stacks from hotspots, but hotspots can ignite them
-		ignite_mob()
+	if(on_fire)
+		return
+	ignite_mob() // Silicons don't gain stacks from hotspots, but hotspots can ignite them.
 
 /mob/living/silicon/robot/emp_act(severity)
 	. = ..()
