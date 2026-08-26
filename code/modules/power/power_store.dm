@@ -154,6 +154,7 @@
 /// - force: If true, uses the remaining power from the cell if there isn't enough power to supply the demand.
 /// Returns: The power used from the cell in joules.
 /obj/item/stock_parts/power_store/use(used, force = FALSE)
+	SHOULD_CALL_PARENT(FALSE)
 	. = min(used, charge)
 	if(rigged && . > 0)
 		explode()
