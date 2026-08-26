@@ -164,18 +164,18 @@
 		charge -= .
 		if(!istype(loc, /obj/machinery/power/apc))
 			SSblackbox.record_feedback("tally", "cell_used", 1, type)
-	SEND_SIGNAL(src, COMSIG_CELL_POWER_USED)
+	SEND_SIGNAL(src, COMSIG_CELL_POWER_USED, .)
 
 /// Recharge the cell.
 /// Args:
 /// - amount: The amount of energy to give to the cell in joules.
 /// Returns: The power given to the cell in joules.
 /obj/item/stock_parts/power_store/proc/give(amount)
-	var/power_used = min(maxcharge-charge,amount)
+	var/power_used = min(maxcharge - charge, amount)
 	charge += power_used
 	if(rigged && amount > 0)
 		explode()
-	SEND_SIGNAL(src, COMSIG_CELL_POWER_GIVEN)
+	SEND_SIGNAL(src, COMSIG_CELL_POWER_GIVEN, power_used)
 	return power_used
 
 /**
@@ -189,7 +189,7 @@
 	charge += energy_used
 	if(rigged && energy_used)
 		explode()
-	SEND_SIGNAL(src, COMSIG_CELL_POWER_CHANGED)
+	SEND_SIGNAL(src, COMSIG_CELL_POWER_CHANGED, energy_used)
 	return energy_used
 
 /obj/item/stock_parts/power_store/examine(mob/user)

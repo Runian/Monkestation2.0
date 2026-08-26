@@ -833,7 +833,7 @@
 		return FALSE
 	if(iscyborg(loc))
 		var/mob/living/silicon/robot/robot = loc
-		if(!robot || !robot.cell || !robot.draw_power(cell_hit_cost))
+		if(!robot || !robot.cell || !robot.cell.use(cell_hit_cost))
 			return FALSE
 	else if(!deductcharge(cell_hit_cost))
 		return FALSE

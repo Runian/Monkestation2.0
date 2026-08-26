@@ -936,13 +936,40 @@
 
 /// Uses a certain amount of power from the cyborg and deals with the impact of doing so.
 /mob/living/silicon/robot/proc/draw_power(power_to_draw, force)
-	if(low_power_mode)
-		return
-	. = cell?.use(power_to_draw, force)
-	if(!QDELETED(src) && !cell?.charge())
+	return cell?.use(power_to_draw, force)
+
+/mob/living/silicon/robot/proc/on_cell_power_drained(datum/source, power_used)
+	SIGNAL_HANDLER
+	if(QDELETED(cell)) // We already know the source is our cell (and it blew up).
 		set_low_power_mode(TRUE)
 		return
-	diag_hud_set_borgcell()
+	if(!power_used)
+		return
+	if(cell.charge())
+		diag_hud_set_borgcell()
+	if(!low_power_mode)
+		return
+	set_low_power_mode(TRUE)
+
+/mob/living/silicon/robot/proc/on_cell_power_recharged(datum/source, power_gained)
+	SIGNAL_HANDLER
+	if(QDELETED(cell))
+		set_low_power_mode(TRUE)
+		return
+	if(!power_gained)
+		return
+	if(cell.charge())
+		diag_hud_set_borgcell()
+	if(!low_power_mode)
+		return
+	set_low_power_mode(FALSE)
+
+/mob/living/silicon/robot/proc/on_cell_power_changed(datum/source, power_difference)
+	SIGNAL_HANDLER
+	if(power_difference >= 0)
+		on_cell_power_recharged(source, power_difference)
+		return
+	on_cell_power_drained(source, -power_difference)
 
 /// Sets the cyborg's low power mode status.
 /mob/living/silicon/robot/proc/set_low_power_mode(new_mode)

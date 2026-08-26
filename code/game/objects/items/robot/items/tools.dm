@@ -103,7 +103,7 @@
 	SIGNAL_HANDLER
 	if(!projectile.is_hostile_projectile())
 		return
-	if(!active_cyborg.cell || !active_cyborg.draw_power(projectile.damage * cost_per_projectile_damage) || (active_cyborg.cell.charge < (active_cyborg.cell.maxcharge * cyborg_cell_critical_percentage)))
+	if(!active_cyborg.cell || !active_cyborg.cell.use(projectile.damage * cost_per_projectile_damage) || (active_cyborg.cell.charge < (active_cyborg.cell.maxcharge * cyborg_cell_critical_percentage)))
 		visible_message(span_warning("[src] blinks \"ENERGY DEPLETED\"."))
 		deactivate_field()
 

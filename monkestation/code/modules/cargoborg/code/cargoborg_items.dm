@@ -45,7 +45,7 @@
 	if(COOLDOWN_FINISHED(src, printer_cooldown))
 		// If there's not too much paper already, let's go
 		if(!toppaper_ref || length(contents) < MAX_PAPER_INTEGRATED_CLIPBOARD)
-			cyborg_user.draw_power(paper_charge_cost)
+			cyborg_user.cell.use(paper_charge_cost)
 			COOLDOWN_START(src, printer_cooldown, printer_cooldown_time)
 			var/obj/item/paper/new_paper = new /obj/item/paper
 			new_paper.forceMove(src)
@@ -187,7 +187,7 @@
 		to_chat(user, span_warning("Your internal cell doesn't have enough charge left to use [src]."))
 		return
 
-	user.draw_power(charge_cost)
+	user.cell.use(charge_cost)
 	in_use = TRUE
 	COOLDOWN_START(src, clamp_cooldown, cooldown_duration)
 
@@ -411,7 +411,7 @@
 	if(!iscyborg(user))
 		return ITEM_INTERACT_BLOCKING
 	var/mob/living/silicon/robot/robot_user = user
-	if(!robot_user.draw_power(0.012 * STANDARD_CELL_CHARGE))
+	if(!robot_user.cell.use(0.012 * STANDARD_CELL_CHARGE))
 		to_chat(user, span_warning("Not enough power."))
 		return ITEM_INTERACT_BLOCKING
 	shoot(interacting_with, user)

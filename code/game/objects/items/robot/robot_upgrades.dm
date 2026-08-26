@@ -326,9 +326,9 @@
 		borg.adjustBruteLoss(-repair_amount)
 		borg.adjustFireLoss(-repair_amount)
 		borg.updatehealth()
-		borg.draw_power(energy_cost)
+		borg.cell.use(energy_cost)
 	else
-		borg.draw_power(0.005 * STANDARD_CELL_CHARGE)
+		borg.cell.use(0.005 * STANDARD_CELL_CHARGE)
 	COOLDOWN_START(src, next_repair, repair_cooldown)
 	if(!TIMER_COOLDOWN_FINISHED(src, COOLDOWN_BORG_SELF_REPAIR))
 		return

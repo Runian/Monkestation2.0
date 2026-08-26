@@ -667,7 +667,7 @@ GLOBAL_VAR_INIT(icon_holographic_window, init_holographic_window())
 		if(user)
 			balloon_alert(user, "no cell found!")
 		return 0
-	. = borgy.draw_power(amount * energyfactor) //borgs get 1.3x the use of their RCDs
+	. = borgy.cell.use(amount * energyfactor) //borgs get 1.3x the use of their RCDs
 	if(!. && user)
 		balloon_alert(user, "insufficient charge!")
 	return .

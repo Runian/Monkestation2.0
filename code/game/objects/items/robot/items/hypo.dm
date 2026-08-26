@@ -234,7 +234,7 @@
 		total_charge_cost += charge_cost
 	if(iscyborg(loc))
 		var/mob/living/silicon/robot/cyborg = loc
-		cyborg.draw_power(total_charge_cost)
+		cyborg.cell?.use(total_charge_cost)
 
 /// Depletes the supply of a reagent.
 /obj/item/reagent_containers/borghypo/proc/deplete_reagent(datum/reagent/reagent_typepath, amount)

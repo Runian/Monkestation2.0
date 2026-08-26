@@ -31,7 +31,7 @@
 			return FALSE
 	if(iscyborg(user))
 		var/mob/living/silicon/robot/robot_user = user
-		if(!robot_user.draw_power(CYBORG_STUN_CHARGE_COST))
+		if(!robot_user.cell.use(CYBORG_STUN_CHARGE_COST))
 			return
 
 	user.do_attack_animation(attacked_mob)
@@ -143,7 +143,7 @@
 						span_warning("You bop [attacked_mob] on the head!"))
 			playsound(loc, 'sound/weapons/tap.ogg', 50, TRUE, -1)
 		if(HUG_MODE_SHOCK)
-			if(!COOLDOWN_FINISHED(src, shock_cooldown) || !user.draw_power(500))
+			if(!COOLDOWN_FINISHED(src, shock_cooldown) || !user.cell.use(0.05 * STANDARD_CELL_VALUE))
 				return
 			if(ishuman(attacked_mob))
 				attacked_mob.electrocute_act(5, "[user]", flags = SHOCK_NOGLOVES)
@@ -160,7 +160,7 @@
 			playsound(loc, 'sound/effects/sparks2.ogg', 50, TRUE, -1)
 			COOLDOWN_START(src, shock_cooldown, HUG_SHOCK_COOLDOWN)
 		if(HUG_MODE_CRUSH)
-			if(!COOLDOWN_FINISHED(src, crush_cooldown) || !user.draw_power(300))
+			if(!COOLDOWN_FINISHED(src, crush_cooldown) || !user.cell.use(0.03 * STANDARD_CELL_VALUE))
 				return
 			if(ishuman(attacked_mob))
 				user.visible_message(span_userdanger("[user] crushes [attacked_mob] in [user.p_their()] grip!"), \
@@ -315,7 +315,7 @@
 					break
 			else
 				var/draw = min(user.cell.charge, target_cell.chargerate * charge_ratio, target_cell.maxcharge - target_cell.charge)
-				if(!user.draw_power(draw))
+				if(!user.cell.use(draw))
 					break
 				if(!target_cell.give(draw))
 					break
@@ -363,7 +363,7 @@
 
 			if(mode == CHARGER_MODE_DRAW)
 				var/draw = min(borg.cell.charge, borg.cell.chargerate * charge_ratio, user.cell.maxcharge - user.cell.charge)
-				if(!borg.draw_power(draw))
+				if(!borg.cell.use(draw))
 					break
 				if(!user.cell.give(draw))
 					break
@@ -371,7 +371,7 @@
 				var/draw = min(user.cell.charge, borg.cell.chargerate * charge_ratio, borg.cell.maxcharge - borg.cell.charge)
 				if(!user.cell.use(draw))
 					break
-				if(!borg.draw_power(draw))
+				if(!borg.cell.use(draw))
 					break
 
 			target.update_appearance()
@@ -410,10 +410,10 @@
 
 	if(iscyborg(user))
 		var/mob/living/silicon/robot/robot_user = user
-		if(!robot_user.cell || robot_user.cell.charge < 1200)
+		if(!robot_user.cell || robot_user.cell.charge < 0.12 * STANDARD_CELL_VALUE)
 			to_chat(user, span_warning("You don't have enough charge to do this!"))
 			return
-		robot_user.draw_power(1000)
+		robot_user.cell.use(0.1 * STANDARD_CELL_VALUE)
 		if(robot_user.emagged)
 			safety = FALSE
 

@@ -33,7 +33,7 @@
 	if(!R.cell)
 		to_chat(R, span_warning("You need a power cell installed for that."))
 		return
-	if(!R.draw_power(circuit_cost))
+	if(!R.cell.use(circuit_cost))
 		to_chat(R, span_warning("You don't have the energy for that (you need [display_energy(circuit_cost)].)"))
 		return
 	if(recharging)

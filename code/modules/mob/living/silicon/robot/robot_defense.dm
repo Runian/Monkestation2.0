@@ -448,7 +448,7 @@ GLOBAL_LIST_INIT(blacklisted_borg_hats, typecacheof(list( //Hats that don't real
 		return ..()
 	playsound(src, 'sound/mecha/mech_shield_deflect.ogg', 100, TRUE)
 	balloon_alert(borg, "absorbed!")
-	borg.draw_power(damage * (STANDARD_CELL_CHARGE / 15), force = TRUE)
+	borg.cell.use(damage * (STANDARD_CELL_CHARGE / 15), force = TRUE)
 	damage *= 0.5
 	if(!borg.cell.charge())
 		shield.Activate() // Turns it off.

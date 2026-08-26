@@ -64,4 +64,4 @@
 		if(cell.charge <= 0.01 * STANDARD_CELL_CHARGE) // An obvious warning for busy cyborgs to go charge.
 			drop_all_held_items()
 		var/energy_consumption = max(lamp_power_consumption * lamp_enabled * lamp_intensity * seconds_per_tick, BORG_MINIMUM_POWER_CONSUMPTION * seconds_per_tick) //Lamp will use a max of 5 * [BORG_LAMP_POWER_CONSUMPTION], depending on brightness of lamp. If lamp is off, borg systems consume [BORG_MINIMUM_POWER_CONSUMPTION], or the rest of the cell if it's lower than that.
-		draw_power(energy_consumption, TRUE)
+		cell.use(energy_consumption, TRUE)
