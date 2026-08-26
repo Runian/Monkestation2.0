@@ -31,8 +31,8 @@ GLOBAL_LIST_INIT(blacklisted_borg_hats, typecacheof(list( //Hats that don't real
 			if(!user.transferItemToLoc(attacking_item, src))
 				return
 			cell = attacking_item
-			if(cell.charge)
-				low_power_mode = FALSE
+			if(cell.charge())
+				set_low_power_mode(FALSE)
 			to_chat(user, span_notice("You insert the power cell."))
 		update_icons()
 		diag_hud_set_borgcell()
@@ -424,7 +424,7 @@ GLOBAL_LIST_INIT(blacklisted_borg_hats, typecacheof(list( //Hats that don't real
 
 /mob/living/silicon/robot/hitby(atom/movable/hitting_atom, skipcatch, hitpush, blocked, datum/thrownthing/throwingdatum)
 	. = ..()
-	if(. == SUCCESSFUL_BLOCK || AM.throwforce < CYBORG_THROW_SLOWDOWN_THRESHOLD)
+	if(. == SUCCESSFUL_BLOCK || hitting_atom.throwforce < CYBORG_THROW_SLOWDOWN_THRESHOLD)
 		return
 	apply_status_effect(/datum/status_effect/borg_throw_slow)
 
@@ -448,7 +448,7 @@ GLOBAL_LIST_INIT(blacklisted_borg_hats, typecacheof(list( //Hats that don't real
 		return ..()
 	playsound(src, 'sound/mecha/mech_shield_deflect.ogg', 100, TRUE)
 	balloon_alert(borg, "absorbed!")
-	borg.cell.use(damage * (STANDARD_CELL_CHARGE / 15), force = TRUE)
+	borg.draw_power(damage * (STANDARD_CELL_CHARGE / 15), force = TRUE)
 	damage *= 0.5
 	if(!borg.cell.charge())
 		shield.Activate() // Turns it off.

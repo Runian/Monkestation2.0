@@ -139,7 +139,7 @@
 
 		// If the cyborg manages to use a module without a cell, they get the paper
 		// for free.
-		user.cell?.use(cost)
+		user.draw_power(cost)
 
 	return .
 

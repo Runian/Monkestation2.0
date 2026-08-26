@@ -450,11 +450,11 @@ Diagnostic HUDs!
 /mob/living/silicon/robot/proc/diag_hud_set_borgcell()
 	var/image/holder = hud_list[DIAG_BATT_HUD]
 	holder.pixel_z = get_cached_height() - world.icon_size
-	if(cell)
-		var/chargelvl = (cell.charge/cell.maxcharge)
-		holder.icon_state = "hudbatt[RoundDiagBar(chargelvl)]"
-	else
+	if(!cell)
 		holder.icon_state = "hudnobatt"
+		return
+	var/chargelvl = (cell.charge/cell.maxcharge)
+	holder.icon_state = "hudbatt[RoundDiagBar(chargelvl)]"
 
 //borg-AI shell tracking
 /mob/living/silicon/robot/proc/diag_hud_set_aishell() //Shows tracking beacons on the mech

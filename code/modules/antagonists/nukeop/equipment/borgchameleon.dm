@@ -48,7 +48,7 @@
 /obj/item/borg_chameleon/process(seconds_per_tick)
 	if(QDELETED(disguised_cyborg))
 		return PROCESS_KILL
-	if(disguised_cyborg.cell?.use(ACTIVATION_UP_KEEP * seconds_per_tick))
+	if(disguised_cyborg.draw_power(ACTIVATION_UP_KEEP * seconds_per_tick))
 		return
 	disrupt()
 

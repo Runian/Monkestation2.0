@@ -678,7 +678,7 @@
 
 	if(gone == cell)
 		cell = null
-		low_power_mode = TRUE
+		set_low_power_mode(TRUE)
 		if(!QDELETED(src))
 			update_icons()
 
@@ -934,14 +934,26 @@
 
 	return GLOB.fire_appearances[fire_icon]
 
-/// Draw power from the robot
-/mob/living/silicon/robot/proc/draw_power(power_to_draw)
-	cell?.use(power_to_draw)
+/// Uses a certain amount of power from the cyborg and deals with the impact of doing so.
+/mob/living/silicon/robot/proc/draw_power(power_to_draw, force)
+	if(low_power_mode)
+		return
+	. = cell?.use(power_to_draw, force)
+	if(!QDELETED(src) && !cell?.charge())
+		set_low_power_mode(TRUE)
+		return
+	diag_hud_set_borgcell()
 
-
-/mob/living/silicon/robot/set_stat(new_stat)
-	. = ..()
-	//update_stat() // This is probably not needed, but hopefully should be a little sanity check for the spaghetti that borgs are built from
+/// Sets the cyborg's low power mode status.
+/mob/living/silicon/robot/proc/set_low_power_mode(new_mode)
+	if(low_power_mode == new_mode)
+		return
+	low_power_mode = new_mode
+	if(low_power_mode)
+		drop_all_held_items()
+		toggle_headlamp(TRUE)
+		update_icons()
+	diag_hud_set_borgcell()
 
 /mob/living/silicon/robot/proc/on_dampen()
 	SIGNAL_HANDLER
