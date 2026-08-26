@@ -371,7 +371,7 @@
 				var/draw = min(user.cell.charge, borg.cell.chargerate * charge_ratio, borg.cell.maxcharge - borg.cell.charge)
 				if(!user.cell.use(draw))
 					break
-				if(!borg.cell.use(draw))
+				if(!borg.cell.give(draw))
 					break
 
 			target.update_appearance()

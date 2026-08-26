@@ -1069,7 +1069,7 @@
 	var/mob/living/silicon/robot/borgy = user
 	// 25 is our cost per unit of paint, making it cost 25 energy per
 	// normal tag, 50 per window, and 250 per attack
-	if(!borgy.cell.use(amount * 25))
+	if(!borgy.cell?.use(amount * 25))
 		return FALSE
 	return ..()
 
