@@ -343,8 +343,9 @@
 		return
 	. = lockcharge
 	lockcharge = new_lockcharge
-	if(lockcharge && !.)
-		ADD_TRAIT(src, TRAIT_IMMOBILIZED, LOCKED_BORG_TRAIT)
+	if(lockcharge)
+		if(!.)
+			ADD_TRAIT(src, TRAIT_IMMOBILIZED, LOCKED_BORG_TRAIT)
 	else if(.)
 		REMOVE_TRAIT(src, TRAIT_IMMOBILIZED, LOCKED_BORG_TRAIT)
 	logevent("System lockdown [lockcharge ? "triggered" : "released"].")
