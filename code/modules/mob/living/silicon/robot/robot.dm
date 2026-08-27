@@ -1019,7 +1019,7 @@
 	if(low_power_mode)
 		drop_all_held_items()
 		toggle_headlamp(TRUE)
-		update_icons()
+	update_icons()
 	diag_hud_set_borgcell()
 
 //

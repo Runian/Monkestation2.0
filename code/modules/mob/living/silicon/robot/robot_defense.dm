@@ -212,11 +212,9 @@ GLOBAL_LIST_INIT(blacklisted_borg_hats, typecacheof(list( //Hats that don't real
 		if(!cell)
 			return
 		var/obj/item/stock_parts/power_store/cell/removed_cell = cell
-		set_cell(null)
-
-		user.put_in_active_hand(cell)
-		cell.add_fingerprint(user)
-		cell.update_appearance()
+		user.put_in_active_hand(removed_cell) // Cell becomes null here.
+		removed_cell.add_fingerprint(user)
+		removed_cell.update_appearance()
 		to_chat(user, span_notice("You remove \the [removed_cell]."))
 
 /mob/living/silicon/robot/attack_hulk(mob/living/carbon/human/user)
