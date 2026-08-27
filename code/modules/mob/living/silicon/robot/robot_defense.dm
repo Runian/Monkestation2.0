@@ -31,7 +31,7 @@ GLOBAL_LIST_INIT(blacklisted_borg_hats, typecacheof(list( //Hats that don't real
 			if(!user.transferItemToLoc(attacking_item, src))
 				return
 			set_cell(attacking_item)
-			to_chat(user, span_notice("You insert the power cell."))
+			to_chat(user, span_notice("You insert \the [attacking_item]."))
 		return
 
 	if(is_wire_tool(attacking_item))
