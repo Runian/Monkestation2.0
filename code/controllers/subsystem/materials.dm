@@ -166,6 +166,9 @@ SUBSYSTEM_DEF(materials)
 		for(var/mat in materials_declaration)
 			combo[GET_MATERIAL_REF(mat)] = OPTIMAL_COST(materials_declaration[mat] * multiplier)
 		material_combos[combo_index] = combo
+		. = combo
+		if(!length(combo))
+			CRASH("material combo [combo_index] resulted in an empty list.")
 	return combo
 ///MONKESTATION REMOVAL, we dont use this boi, not removing the proc because LAYZ
 /datum/controller/subsystem/materials/proc/InitializeTemplates()
