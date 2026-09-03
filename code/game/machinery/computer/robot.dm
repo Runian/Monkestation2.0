@@ -166,40 +166,35 @@
 
 /// Unlocks the targetted cyborg.
 /obj/machinery/computer/robotics/proc/unlock_cyborg(mob/user, mob/living/silicon/robot/target_cyborg = locked_cyborg)
-	if(target_cyborg != locked_cyborg && (SEND_SIGNAL(target_cyborg, COMSIG_CYBORG_LOCKDOWN_CONSOLE_UNLOCK_ATTEMPT, src) & CYBORG_LOCKDOWN_CONSOLE_INTERCEPTED))
+	if(SEND_SIGNAL(target_cyborg, COMSIG_CYBORG_LOCKDOWN_CONSOLE_UNLOCK_ATTEMPT, src) & CYBORG_LOCKDOWN_CONSOLE_INTERCEPTED)
 		return
-
 	if(QDELETED(target_cyborg))
 		if(target_cyborg == locked_cyborg)
 			use_power = IDLE_POWER_USE
 			locked_cyborg = null
 		return
-
 	if(target_cyborg == locked_cyborg)
-		UnregisterSignal(locked_cyborg, COMSIG_LIVING_DEATH)
-		UnregisterSignal(locked_cyborg, COMSIG_QDELETING)
-		UnregisterSignal(locked_cyborg, COMSIG_CYBORG_LOCKDOWN_CONSOLE_UNLOCK_ATTEMPT)
-		UnregisterSignal(locked_cyborg, COMSIG_CYBORG_LOCKDOWN_UNLOCK)
-		if(locked_cyborg.lockcharge)
-			locked_cyborg.ai_lockdown = FALSE
-			locked_cyborg.try_lockdown(FALSE)
+		UnregisterSignal(target_cyborg, list(COMSIG_LIVING_DEATH, COMSIG_QDELETING, COMSIG_CYBORG_LOCKDOWN_CONSOLE_UNLOCK_ATTEMPT, COMSIG_CYBORG_LOCKDOWN_UNLOCK))
 		use_power = IDLE_POWER_USE
 		locked_cyborg = null
-	inform_and_log_unlock(target_cyborg, user)
+	if(target_cyborg.lockcharge)
+		target_cyborg.ai_lockdown = FALSE
+		target_cyborg.try_lockdown(FALSE)
+	inform_and_log_unlock(user, target_cyborg, user)
 
 /// Locks a cyborg and assigns them to this computer.
 /obj/machinery/computer/robotics/proc/lock_cyborg(mob/user, mob/living/silicon/robot/target_cyborg)
-	locked_cyborg = target_cyborg
 	if(isAI(user))
-		locked_cyborg.ai_lockdown = TRUE
-	locked_cyborg.try_lockdown(TRUE)
+		target_cyborg.ai_lockdown = TRUE
+	target_cyborg.try_lockdown(TRUE)
 	use_power = ACTIVE_POWER_USE
+	locked_cyborg = target_cyborg
 
-	RegisterSignal(locked_cyborg, COMSIG_LIVING_DEATH, PROC_REF(on_cyborg_death))
-	RegisterSignal(locked_cyborg, COMSIG_QDELETING, PROC_REF(on_cyborg_deleted))
-	RegisterSignal(locked_cyborg, COMSIG_CYBORG_LOCKDOWN_CONSOLE_UNLOCK_ATTEMPT, PROC_REF(on_cyborg_unlock_intercept))
-	RegisterSignal(locked_cyborg, COMSIG_CYBORG_LOCKDOWN_UNLOCK, PROC_REF(on_cyborg_unlocked))
-	inform_and_log_unlock(user, locked_cyborg)
+	RegisterSignal(target_cyborg, COMSIG_LIVING_DEATH, PROC_REF(on_cyborg_death))
+	RegisterSignal(target_cyborg, COMSIG_QDELETING, PROC_REF(on_cyborg_deleted))
+	RegisterSignal(target_cyborg, COMSIG_CYBORG_LOCKDOWN_CONSOLE_UNLOCK_ATTEMPT, PROC_REF(on_cyborg_unlock_intercept))
+	RegisterSignal(target_cyborg, COMSIG_CYBORG_LOCKDOWN_UNLOCK, PROC_REF(on_cyborg_unlocked))
+	inform_and_log_lock(user, target_cyborg)
 
 /// Logs and informs the user and cyborg about their unlocked status.
 /obj/machinery/computer/robotics/proc/inform_and_log_unlock(mob/informed_user, mob/living/silicon/robot/informed_cyborg)
@@ -241,8 +236,11 @@
 /// Unlocks the cyborg and informs those nearby that it was because of a different robotics console.
 /obj/machinery/computer/robotics/proc/on_cyborg_unlock_intercept(datum/source, obj/machinery/computer/robotics/unlocking_console)
 	SIGNAL_HANDLER
+	if(locked_cyborg.stat == DEAD || !locked_cyborg.lockcharge || unlocking_console == src)
+		return
 	playsound(src, 'sound/machines/buzz-two.ogg', 50, TRUE)
 	say("Automatic release of [locked_cyborg.name]. Cause: unlocked by different robotics console!")
+	UnregisterSignal(locked_cyborg, COMSIG_CYBORG_LOCKDOWN_CONSOLE_UNLOCK_ATTEMPT)
 	unlock_cyborg()
 	return CYBORG_LOCKDOWN_CONSOLE_INTERCEPTED
 
