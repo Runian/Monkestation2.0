@@ -180,7 +180,13 @@
 	if(target_cyborg.lockcharge)
 		target_cyborg.ai_lockdown = FALSE
 		target_cyborg.try_lockdown(FALSE)
-	inform_and_log_unlock(user, target_cyborg, user)
+	to_chat(target_cyborg, span_notice("Your lockdown has been lifted!"))
+	if(target_cyborg.connected_ai)
+		to_chat(target_cyborg.connected_ai, "[span_notice("NOTICE - Cyborg lockdown lifted")]: <a href='byond://?src=[REF(target_cyborg.connected_ai)];track=[html_encode(target_cyborg.name)]'>[target_cyborg.name]</a><br>")
+	if(user)
+		message_admins(span_notice("[ADMIN_LOOKUPFLW(user)] released [ADMIN_LOOKUPFLW(target_cyborg)]!"))
+		log_silicon("[key_name(user)] released [key_name(target_cyborg)]!")
+		log_combat(user, target_cyborg, "released cyborg")
 
 /// Locks a cyborg and assigns them to this computer.
 /obj/machinery/computer/robotics/proc/lock_cyborg(mob/user, mob/living/silicon/robot/target_cyborg)
@@ -194,28 +200,14 @@
 	RegisterSignal(target_cyborg, COMSIG_QDELETING, PROC_REF(on_cyborg_deleted))
 	RegisterSignal(target_cyborg, COMSIG_CYBORG_LOCKDOWN_CONSOLE_UNLOCK_ATTEMPT, PROC_REF(on_cyborg_unlock_intercept))
 	RegisterSignal(target_cyborg, COMSIG_CYBORG_LOCKDOWN_UNLOCK, PROC_REF(on_cyborg_unlocked))
-	inform_and_log_lock(user, target_cyborg)
-
-/// Logs and informs the user and cyborg about their unlocked status.
-/obj/machinery/computer/robotics/proc/inform_and_log_unlock(mob/informed_user, mob/living/silicon/robot/informed_cyborg)
-	to_chat(informed_cyborg, span_notice("Your lockdown has been lifted!"))
-	if(informed_cyborg.connected_ai)
-		to_chat(informed_cyborg.connected_ai, "[span_notice("NOTICE - Cyborg lockdown lifted")]: <a href='byond://?src=[REF(informed_cyborg.connected_ai)];track=[html_encode(informed_cyborg.name)]'>[informed_cyborg.name]</a><br>")
-	if(informed_user)
-		message_admins(span_notice("[ADMIN_LOOKUPFLW(informed_user)] released [ADMIN_LOOKUPFLW(informed_cyborg)]!"))
-		log_silicon("[key_name(informed_user)] released [key_name(informed_cyborg)]!")
-		log_combat(informed_user, informed_cyborg, "released cyborg")
-
-/// Logs and informs the user and cyborg about their locked status.
-/obj/machinery/computer/robotics/proc/inform_and_log_lock(mob/informed_user, mob/living/silicon/robot/informed_cyborg)
-	to_chat(informed_cyborg, span_alert("Your have been locked down!"))
-	to_chat(informed_cyborg, span_alert("The approximate location of the console that is keeping you locked down is [get_area_name(src)]."))
-	if(informed_cyborg.connected_ai)
-		to_chat(informed_cyborg.connected_ai, "[span_alert("ALERT - Cyborg lockdown detected")]: <a href='byond://?src=[REF(informed_cyborg.connected_ai)];track=[html_encode(informed_cyborg.name)]'>[informed_cyborg.name]</a><br>")
-	if(informed_user)
-		message_admins(span_notice("[ADMIN_LOOKUPFLW(informed_user)] locked down [ADMIN_LOOKUPFLW(informed_cyborg)]!"))
-		log_silicon("[key_name(informed_user)] locked down [key_name(informed_cyborg)]!")
-		log_combat(informed_user, informed_cyborg, "locked down cyborg")
+	to_chat(target_cyborg, span_alert("Your have been locked down!"))
+	to_chat(target_cyborg, span_alert("The approximate location of the console that is keeping you locked down is [get_area_name(src)]."))
+	if(target_cyborg.connected_ai)
+		to_chat(target_cyborg.connected_ai, "[span_alert("ALERT - Cyborg lockdown detected")]: <a href='byond://?src=[REF(target_cyborg.connected_ai)];track=[html_encode(target_cyborg.name)]'>[target_cyborg.name]</a><br>")
+	if(user)
+		message_admins(span_notice("[ADMIN_LOOKUPFLW(user)] locked down [ADMIN_LOOKUPFLW(target_cyborg)]!"))
+		log_silicon("[key_name(user)] locked down [key_name(target_cyborg)]!")
+		log_combat(user, target_cyborg, "locked down cyborg")
 
 /// Unlocks the cyborg and informs those nearby that it was because the cyborg died.
 /obj/machinery/computer/robotics/proc/on_cyborg_death(datum/source, gibbed)
