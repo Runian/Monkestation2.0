@@ -318,16 +318,6 @@
 		W.attack_self(src)
 
 
-/mob/living/silicon/robot/proc/SetLockdown(state = TRUE)
-	// They stay locked down if their wire is cut.
-	if(wires?.is_cut(WIRE_LOCKDOWN))
-		state = TRUE
-	if(state)
-		throw_alert(ALERT_HACKED, /atom/movable/screen/alert/locked)
-	else
-		clear_alert(ALERT_HACKED)
-	set_lockcharge(state)
-
 /mob/living/silicon/robot/proc/motivate()
 	// :3
 	if(!wires?.is_cut(WIRE_MOTIVATIONAL))
@@ -335,20 +325,6 @@
 		playsound(src, "goon/sounds/sparks/electric_shock_short.ogg", 50, 1)
 		emp_act(EMP_HEAVY)
 		logevent("System motivational shock applied!")
-
-/// Reports the event of the change in value of the lockcharge variable.
-/mob/living/silicon/robot/proc/set_lockcharge(new_lockcharge)
-	if(new_lockcharge == lockcharge)
-		return
-	. = lockcharge
-	lockcharge = new_lockcharge
-	if(lockcharge)
-		if(!.)
-			ADD_TRAIT(src, TRAIT_IMMOBILIZED, LOCKED_BORG_TRAIT)
-	else if(.)
-		REMOVE_TRAIT(src, TRAIT_IMMOBILIZED, LOCKED_BORG_TRAIT)
-	logevent("System lockdown [lockcharge ? "triggered" : "released"].")
-
 
 /mob/living/silicon/robot/proc/SetEmagged(new_state)
 	emagged = new_state
@@ -936,6 +912,33 @@
 		unbuckle_mob(buckled_mob) // In case the paralyze doesn't automatically unbuckle them.
 		buckled_mob.Paralyze(1 SECONDS)
 	do_sparks(5, 0, src)
+
+//
+// Lockdown / Lockcharge
+//
+
+/mob/living/silicon/robot/proc/SetLockdown(state = TRUE)
+	// They stay locked down if their wire is cut.
+	if(wires?.is_cut(WIRE_LOCKDOWN))
+		state = TRUE
+	if(state)
+		throw_alert(ALERT_HACKED, /atom/movable/screen/alert/locked)
+	else
+		clear_alert(ALERT_HACKED)
+	set_lockcharge(state)
+
+/// Reports the event of the change in value of the lockcharge variable.
+/mob/living/silicon/robot/proc/set_lockcharge(new_lockcharge)
+	if(new_lockcharge == lockcharge)
+		return
+	. = lockcharge
+	lockcharge = new_lockcharge
+	if(lockcharge)
+		if(!.)
+			ADD_TRAIT(src, TRAIT_IMMOBILIZED, LOCKED_BORG_TRAIT)
+	else if(.)
+		REMOVE_TRAIT(src, TRAIT_IMMOBILIZED, LOCKED_BORG_TRAIT)
+	logevent("System lockdown [lockcharge ? "triggered" : "released"].")
 
 //
 // Power

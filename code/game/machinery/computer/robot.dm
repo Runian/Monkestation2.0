@@ -91,14 +91,16 @@
 			if(!can_control(usr, target_cyborg))
 				return
 			if(target_cyborg.lockcharge)
+				// Getting your wires cut is the ultimate form of lockdown.
 				if(target_cyborg.wires?.is_cut(WIRE_LOCKDOWN))
-					to_chat(usr, span_danger("The cyborg was locked through physical means."))
+					to_chat(usr, span_danger("Cyborg was locked through physical means."))
+					return
+				// AIs can only unlock cyborgs that they locked.
+				if(isAI(usr) && !target_cyborg.ai_lockdown)
+					to_chat(usr, span_danger("Cyborg locked by an user with superior permissions."))
 					return
 				if(isnull(locked_cyborg) || locked_cyborg != target_cyborg)
-					to_chat(usr, span_danger("The cyborg was locked by a different console."))
-					return
-				if(isAI(usr) && target_cyborg.ai_lockdown)
-					to_chat(usr, span_danger("Cyborg locked by an user with superior permissions."))
+					to_chat(usr, span_danger("Cyborg was locked by a different console."))
 					return
 				unlock_cyborg(usr, target_cyborg)
 				return
@@ -148,19 +150,21 @@
 
 /// Can this cyborg be affected by the robotics console at all?
 /obj/machinery/computer/robotics/proc/can_control(mob/user, mob/living/silicon/robot/target_cyborg)
-	. = FALSE
 	if(!istype(target_cyborg))
-		return
-	if(isAI(user) && target_cyborg.connected_ai != user) // AI can only affect their underlings.
-		return
-	if(iscyborg(user) && target_cyborg != user) // Cyborgs can only affect themselves.
-		return
+		return FALSE
+	if(isAI(user) && target_cyborg.connected_ai != user) // AIs may only affect all of their connected cyborgs.
+		return FALSE
+	if(iscyborg(user) && target_cyborg != user) // Cyborg may only affect themselves.
+		return FALSE
 	if(target_cyborg.scrambledcodes)
-		return
+		return FALSE
 	return TRUE
 
 /// Unlocks the cyborg that was assigned to this computer.
 /obj/machinery/computer/robotics/proc/unlock_cyborg(mob/user)
+	if(!locked_cyborg)
+		return
+
 	UnregisterSignal(locked_cyborg, COMSIG_QDELETING)
 
 	locked_cyborg.ai_lockdown = FALSE
@@ -180,6 +184,9 @@
 
 /// Locks a cyborg and assigns them to this computer.
 /obj/machinery/computer/robotics/proc/lock_cyborg(mob/user, mob/living/silicon/robot/target_cyborg)
+	if(locked_cyborg)
+		return
+
 	locked_cyborg = target_cyborg
 	if(isAI(user))
 		locked_cyborg.ai_lockdown = TRUE
@@ -189,7 +196,7 @@
 	RegisterSignal(locked_cyborg, COMSIG_QDELETING, PROC_REF(on_cyborg_deleted))
 
 	to_chat(locked_cyborg, span_alert("Your have been locked down!"))
-	to_chat(locked_cyborg, span_alert("The approximate location of the console that is keeping you locked down is [get_area_name(src)]"))
+	to_chat(locked_cyborg, span_alert("The approximate location of the console that is keeping you locked down is [get_area_name(src)]."))
 	if(locked_cyborg.connected_ai)
 		to_chat(locked_cyborg.connected_ai, "[span_alert("ALERT - Cyborg lockdown detected")]: <a href='byond://?src=[REF(locked_cyborg.connected_ai)];track=[html_encode(locked_cyborg.name)]'>[locked_cyborg.name]</a><br>")
 
@@ -201,3 +208,9 @@
 /obj/machinery/computer/robotics/proc/on_cyborg_deleted(datum/source, force)
 	SIGNAL_HANDLER
 	locked_cyborg = null
+
+
+// TODO
+/*
+	manual unlock (via wires) should disengage the lockdown on the computer & inform those nearby the computer that cyborg has been unlocked manually
+*/
