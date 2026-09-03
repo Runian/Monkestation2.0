@@ -169,7 +169,7 @@
 	if(target_cyborg != locked_cyborg && (SEND_SIGNAL(target_cyborg, COMSIG_CYBORG_LOCKDOWN_CONSOLE_UNLOCK_ATTEMPT, src) & CYBORG_LOCKDOWN_CONSOLE_INTERCEPTED))
 		return
 
-	if(QDELETED(locked_cyborg))
+	if(QDELETED(target_cyborg))
 		if(target_cyborg == locked_cyborg)
 			use_power = IDLE_POWER_USE
 			locked_cyborg = null
