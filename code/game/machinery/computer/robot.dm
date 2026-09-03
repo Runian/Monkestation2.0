@@ -9,6 +9,8 @@
 	active_power_usage = STANDARD_CELL_CHARGE
 	/// The cyborg that is currently locked down by us.
 	var/mob/living/silicon/robot/locked_cyborg = null
+	/// The id of the timer that will automatically unlock the cyborg.
+	var/lockdown_timer = null
 
 /obj/machinery/computer/robotics/Destroy()
 	if(!isnull(locked_cyborg))
@@ -172,11 +174,13 @@
 		if(target_cyborg == locked_cyborg)
 			update_use_power(IDLE_POWER_USE)
 			locked_cyborg = null
+			deltimer(lockdown_timer)
 		return
 	if(target_cyborg == locked_cyborg)
 		UnregisterSignal(target_cyborg, list(COMSIG_LIVING_DEATH, COMSIG_QDELETING, COMSIG_CYBORG_LOCKDOWN_CONSOLE_UNLOCK_ATTEMPT, COMSIG_CYBORG_LOCKDOWN_UNLOCK))
 		update_use_power(IDLE_POWER_USE)
 		locked_cyborg = null
+		deltimer(lockdown_timer)
 	if(target_cyborg.lockcharge)
 		target_cyborg.ai_lockdown = FALSE
 		target_cyborg.try_lockdown(FALSE)
@@ -195,6 +199,8 @@
 	target_cyborg.try_lockdown(TRUE)
 	update_use_power(ACTIVE_POWER_USE)
 	locked_cyborg = target_cyborg
+	if(!target_cyborg.ai_lockdown)
+		lockdown_timer = addtimer(CALLBACK(src, PROC_REF(lockdown_timed_out), FALSE), 10 MINUTES, TIMER_UNIQUE | TIMER_OVERRIDE | TIMER_DELETE_ME | TIMER_STOPPABLE)
 
 	RegisterSignal(target_cyborg, COMSIG_LIVING_DEATH, PROC_REF(on_cyborg_death))
 	RegisterSignal(target_cyborg, COMSIG_QDELETING, PROC_REF(on_cyborg_deleted))
@@ -243,3 +249,10 @@
 	say("Automatic release of [locked_cyborg.name]. Cause: external intervention!")
 	unlock_cyborg()
 
+/// Called when the cyborg assigned to this computer was locked for too long.
+/obj/machinery/computer/robotics/proc/lockdown_timed_out()
+	if(locked_cyborg.ai_lockdown)
+		return
+	playsound(src, 'sound/machines/buzz-two.ogg', 50, TRUE)
+	say("Automatic release of [locked_cyborg.name]. Cause: automatic timeout!")
+	unlock_cyborg()
