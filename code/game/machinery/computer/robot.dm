@@ -12,12 +12,20 @@
 
 /obj/machinery/computer/robotics/Destroy()
 	if(!isnull(locked_cyborg))
+		playsound(get_turf(src), 'sound/machines/buzz-two.ogg', 50, TRUE)
 		unlock_cyborg()
 	return ..()
 
 /obj/machinery/computer/robotics/on_set_machine_stat(old_value)
-	if(!isnull(locked_cyborg) && (machine_stat & (NOPOWER|BROKEN|MAINT)))
-		unlock_cyborg()
+	if(!isnull(locked_cyborg))
+		if(machine_stat & NOPOWER)
+			playsound(src, 'sound/machines/buzz-two.ogg', 50, TRUE)
+			say("Automatic release of [locked_cyborg.name]. Cause: power outage!")
+			unlock_cyborg()
+		else if(machine_stat & (BROKEN|MAINT)) // Computers don't really use MAINT, but we have it just in case.
+			playsound(src, 'sound/machines/buzz-two.ogg', 50, TRUE)
+			say("Automatic release of [locked_cyborg.name]. Cause: system failure!")
+			unlock_cyborg()
 	return ..()
 
 /obj/machinery/computer/robotics/ui_interact(mob/user, datum/tgui/ui)
@@ -90,24 +98,20 @@
 			var/mob/living/silicon/robot/target_cyborg = locate(params["ref"]) in GLOB.silicon_mobs
 			if(!can_control(usr, target_cyborg))
 				return
-			if(target_cyborg.lockcharge)
-				// Getting your wires cut is the ultimate form of lockdown.
-				if(target_cyborg.wires?.is_cut(WIRE_LOCKDOWN))
-					to_chat(usr, span_danger("Cyborg was locked through physical means."))
+			if(!target_cyborg.lockcharge)
+				if(!isnull(locked_cyborg))
+					to_chat(usr, span_danger("You can lock down only one cyborg at a time."))
 					return
-				// AIs can only unlock cyborgs that they locked.
-				if(isAI(usr) && !target_cyborg.ai_lockdown)
-					to_chat(usr, span_danger("Cyborg locked by an user with superior permissions."))
-					return
-				if(isnull(locked_cyborg) || locked_cyborg != target_cyborg)
-					to_chat(usr, span_danger("Cyborg was locked by a different console."))
-					return
-				unlock_cyborg(usr, target_cyborg)
+				lock_cyborg(usr, target_cyborg)
 				return
-			if(!isnull(locked_cyborg))
-				to_chat(usr, span_danger("You can lock down only one cyborg at a time."))
+			if(target_cyborg.wires?.is_cut(WIRE_LOCKDOWN))
+				to_chat(usr, span_danger("Cyborg's motor controller is irresponsive!"))
 				return
-			lock_cyborg(usr, target_cyborg)
+			// AIs can only unlock any cyborgs, but only if it was locked by them first.
+			if(isAI(usr) && !target_cyborg.ai_lockdown)
+				to_chat(usr, span_danger("Cyborg was locked by an user with superior permissions."))
+				return
+			unlock_cyborg(usr, target_cyborg)
 			return
 		if("killbot") //Malf AIs, and AIs with a combat upgrade, can detonate their cyborgs remotely.
 			if(!isAI(usr))
@@ -160,57 +164,92 @@
 		return FALSE
 	return TRUE
 
-/// Unlocks the cyborg that was assigned to this computer.
-/obj/machinery/computer/robotics/proc/unlock_cyborg(mob/user)
-	if(!locked_cyborg)
+/// Unlocks the targetted cyborg.
+/obj/machinery/computer/robotics/proc/unlock_cyborg(mob/user, mob/living/silicon/robot/target_cyborg = locked_cyborg)
+	if(target_cyborg != locked_cyborg && (SEND_SIGNAL(target_cyborg, COMSIG_CYBORG_LOCKDOWN_CONSOLE_UNLOCK_ATTEMPT, src) & CYBORG_LOCKDOWN_CONSOLE_INTERCEPTED))
 		return
 
-	UnregisterSignal(locked_cyborg, COMSIG_QDELETING)
+	if(QDELETED(locked_cyborg))
+		if(target_cyborg == locked_cyborg)
+			use_power = IDLE_POWER_USE
+			locked_cyborg = null
+		return
 
-	locked_cyborg.ai_lockdown = FALSE
-	locked_cyborg.SetLockdown(FALSE)
-	use_power = IDLE_POWER_USE
-
-	to_chat(locked_cyborg, span_notice("Your lockdown has been lifted!"))
-	if(locked_cyborg.connected_ai)
-		to_chat(locked_cyborg.connected_ai, "[span_notice("NOTICE - Cyborg lockdown lifted")]: <a href='byond://?src=[REF(locked_cyborg.connected_ai)];track=[html_encode(locked_cyborg.name)]'>[locked_cyborg.name]</a><br>")
-
-	if(user)
-		message_admins(span_notice("[ADMIN_LOOKUPFLW(user)] released [ADMIN_LOOKUPFLW(locked_cyborg)]!"))
-		log_silicon("[key_name(user)] released [key_name(locked_cyborg)]!")
-		log_combat(user, locked_cyborg, "released cyborg")
-
-	locked_cyborg = null
+	if(target_cyborg == locked_cyborg)
+		UnregisterSignal(locked_cyborg, COMSIG_LIVING_DEATH)
+		UnregisterSignal(locked_cyborg, COMSIG_QDELETING)
+		UnregisterSignal(locked_cyborg, COMSIG_CYBORG_LOCKDOWN_CONSOLE_UNLOCK_ATTEMPT)
+		UnregisterSignal(locked_cyborg, COMSIG_CYBORG_LOCKDOWN_UNLOCK)
+		if(locked_cyborg.lockcharge)
+			locked_cyborg.ai_lockdown = FALSE
+			locked_cyborg.try_lockdown(FALSE)
+		use_power = IDLE_POWER_USE
+		locked_cyborg = null
+	inform_and_log_unlock(target_cyborg, user)
 
 /// Locks a cyborg and assigns them to this computer.
 /obj/machinery/computer/robotics/proc/lock_cyborg(mob/user, mob/living/silicon/robot/target_cyborg)
-	if(locked_cyborg)
-		return
-
 	locked_cyborg = target_cyborg
 	if(isAI(user))
 		locked_cyborg.ai_lockdown = TRUE
-	locked_cyborg.SetLockdown(TRUE)
+	locked_cyborg.try_lockdown(TRUE)
 	use_power = ACTIVE_POWER_USE
 
+	RegisterSignal(locked_cyborg, COMSIG_LIVING_DEATH, PROC_REF(on_cyborg_death))
 	RegisterSignal(locked_cyborg, COMSIG_QDELETING, PROC_REF(on_cyborg_deleted))
+	RegisterSignal(locked_cyborg, COMSIG_CYBORG_LOCKDOWN_CONSOLE_UNLOCK_ATTEMPT, PROC_REF(on_cyborg_unlock_intercept))
+	RegisterSignal(locked_cyborg, COMSIG_CYBORG_LOCKDOWN_UNLOCK, PROC_REF(on_cyborg_unlocked))
+	inform_and_log_unlock(user, locked_cyborg)
 
-	to_chat(locked_cyborg, span_alert("Your have been locked down!"))
-	to_chat(locked_cyborg, span_alert("The approximate location of the console that is keeping you locked down is [get_area_name(src)]."))
-	if(locked_cyborg.connected_ai)
-		to_chat(locked_cyborg.connected_ai, "[span_alert("ALERT - Cyborg lockdown detected")]: <a href='byond://?src=[REF(locked_cyborg.connected_ai)];track=[html_encode(locked_cyborg.name)]'>[locked_cyborg.name]</a><br>")
+/// Logs and informs the user and cyborg about their unlocked status.
+/obj/machinery/computer/robotics/proc/inform_and_log_unlock(mob/informed_user, mob/living/silicon/robot/informed_cyborg)
+	to_chat(informed_cyborg, span_notice("Your lockdown has been lifted!"))
+	if(informed_cyborg.connected_ai)
+		to_chat(informed_cyborg.connected_ai, "[span_notice("NOTICE - Cyborg lockdown lifted")]: <a href='byond://?src=[REF(informed_cyborg.connected_ai)];track=[html_encode(informed_cyborg.name)]'>[informed_cyborg.name]</a><br>")
+	if(informed_user)
+		message_admins(span_notice("[ADMIN_LOOKUPFLW(informed_user)] released [ADMIN_LOOKUPFLW(informed_cyborg)]!"))
+		log_silicon("[key_name(informed_user)] released [key_name(informed_cyborg)]!")
+		log_combat(informed_user, informed_cyborg, "released cyborg")
 
-	if(user)
-		message_admins(span_notice("[ADMIN_LOOKUPFLW(user)] locked down [ADMIN_LOOKUPFLW(locked_cyborg)]!"))
-		log_silicon("[key_name(user)] locked down [key_name(locked_cyborg)]!")
-		log_combat(user, locked_cyborg, "locked down cyborg")
+/// Logs and informs the user and cyborg about their locked status.
+/obj/machinery/computer/robotics/proc/inform_and_log_lock(mob/informed_user, mob/living/silicon/robot/informed_cyborg)
+	to_chat(informed_cyborg, span_alert("Your have been locked down!"))
+	to_chat(informed_cyborg, span_alert("The approximate location of the console that is keeping you locked down is [get_area_name(src)]."))
+	if(informed_cyborg.connected_ai)
+		to_chat(informed_cyborg.connected_ai, "[span_alert("ALERT - Cyborg lockdown detected")]: <a href='byond://?src=[REF(informed_cyborg.connected_ai)];track=[html_encode(informed_cyborg.name)]'>[informed_cyborg.name]</a><br>")
+	if(informed_user)
+		message_admins(span_notice("[ADMIN_LOOKUPFLW(informed_user)] locked down [ADMIN_LOOKUPFLW(informed_cyborg)]!"))
+		log_silicon("[key_name(informed_user)] locked down [key_name(informed_cyborg)]!")
+		log_combat(informed_user, informed_cyborg, "locked down cyborg")
 
+/// Unlocks the cyborg and informs those nearby that it was because the cyborg died.
+/obj/machinery/computer/robotics/proc/on_cyborg_death(datum/source, gibbed)
+	SIGNAL_HANDLER
+	playsound(src, 'sound/machines/buzz-two.ogg', 50, TRUE)
+	say("Automatic release of [locked_cyborg.name]. Cause: unresponsive telemetry!")
+	log_silicon("Robotics console automatically released [key_name(locked_cyborg)] upon death!")
+	unlock_cyborg()
+
+/// Unassigns the cyborg and informs those nearby that it was because the cyborg deleted.
 /obj/machinery/computer/robotics/proc/on_cyborg_deleted(datum/source, force)
 	SIGNAL_HANDLER
-	locked_cyborg = null
+	playsound(src, 'sound/machines/buzz-two.ogg', 50, TRUE)
+	say("Automatic release of [locked_cyborg.name]. Cause: telemetry no longer exists!")
+	log_silicon("Robotics console automatically released [key_name(locked_cyborg)] upon deletion!")
+	unlock_cyborg()
 
+/// Unlocks the cyborg and informs those nearby that it was because of a different robotics console.
+/obj/machinery/computer/robotics/proc/on_cyborg_unlock_intercept(datum/source, obj/machinery/computer/robotics/unlocking_console)
+	SIGNAL_HANDLER
+	playsound(src, 'sound/machines/buzz-two.ogg', 50, TRUE)
+	say("Automatic release of [locked_cyborg.name]. Cause: unlocked by different robotics console!")
+	unlock_cyborg()
+	return CYBORG_LOCKDOWN_CONSOLE_INTERCEPTED
 
-// TODO
-/*
-	manual unlock (via wires) should disengage the lockdown on the computer & inform those nearby the computer that cyborg has been unlocked manually
-*/
+/// Informs those nearby that the cyborg was unlocked through external intervention.
+/obj/machinery/computer/robotics/proc/on_cyborg_unlocked(datum/source)
+	SIGNAL_HANDLER
+	playsound(src, 'sound/machines/buzz-two.ogg', 50, TRUE)
+	say("Automatic release of [locked_cyborg.name]. Cause: external intervention!")
+	unlock_cyborg()
+

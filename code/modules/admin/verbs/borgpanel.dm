@@ -133,7 +133,7 @@ ADMIN_VERB(borg_panel, R_ADMIN, FALSE, "Show Borg Panel", ADMIN_VERB_NO_DESCRIPT
 				message_admins("[key_name_admin(user)] disabled lawsync on [ADMIN_LOOKUPFLW(borg)].")
 				log_silicon("[key_name(user)] disabled lawsync on [key_name(borg)].")
 		if ("toggle_lockdown")
-			borg.SetLockdown(!borg.lockcharge)
+			borg.try_lockdown(!borg.lockcharge)
 			if (borg.lockcharge)
 				message_admins("[key_name_admin(user)] locked down [ADMIN_LOOKUPFLW(borg)].")
 				log_silicon("[key_name(user)] locked down [key_name(borg)].")

@@ -124,24 +124,25 @@
 			var/datum/brain_trauma/special/infected_ipc/trauma = victim.gain_trauma(/datum/brain_trauma/special/infected_ipc)
 			trauma.link_and_add_antag(master_ai.mind)
 		victim.heal_damage_type(max(0, 80 - victim.getBruteLoss()), BRUTE)
-	else
-		var/mob/living/silicon/robot/new_borg = victim.Robotize()
-		var/obj/item/stock_parts/power_store/cell/upgraded/plus/replacement_cell = new(new_borg, robot_cell_charge)
-		new_borg.set_cell(replacement_cell)
+		return
 
-		// So he can't jump out the gate right away.
-		new_borg.SetLockdown()
-		if(master_ai && new_borg.connected_ai != master_ai)
-			new_borg.set_connected_ai(master_ai)
-			new_borg.lawsync()
-			new_borg.lawupdate = TRUE
-			log_silicon("[key_name(new_borg)] resynced to [key_name(master_ai)]")
-		addtimer(CALLBACK(src, PROC_REF(unlock_new_robot), new_borg), 5 SECONDS)
+	var/mob/living/silicon/robot/new_borg = victim.Robotize()
+	var/obj/item/stock_parts/power_store/cell/upgraded/plus/replacement_cell = new(new_borg, robot_cell_charge)
+	new_borg.set_cell(replacement_cell)
+
+	// So he can't jump out the gate right away.
+	new_borg.try_lockdown()
+	if(master_ai && new_borg.connected_ai != master_ai)
+		new_borg.set_connected_ai(master_ai)
+		new_borg.lawsync()
+		new_borg.lawupdate = TRUE
+		log_silicon("[key_name(new_borg)] resynced to [key_name(master_ai)]")
+	addtimer(CALLBACK(src, PROC_REF(unlock_new_robot), new_borg), 5 SECONDS)
 	// monkestation edit end PR #5133
 
 /obj/machinery/transformer/proc/unlock_new_robot(mob/living/silicon/robot/new_borg)
 	playsound(src.loc, 'sound/machines/ping.ogg', 50, FALSE)
 	sleep(3 SECONDS)
 	if(new_borg)
-		new_borg.SetLockdown(FALSE)
+		new_borg.try_lockdown(FALSE)
 		new_borg.notify_ai(AI_NOTIFICATION_NEW_BORG)

@@ -569,7 +569,7 @@
 		return FALSE
 	ADD_TRAIT(borg, TRAIT_NO_TRANSFORM, REF(src))
 	var/prev_lockcharge = borg.lockcharge
-	borg.SetLockdown(TRUE)
+	borg.try_lockdown(TRUE)
 	borg.set_anchored(TRUE)
 	do_smoke(1, borg, borg.loc)
 	sleep(0.2 SECONDS)
@@ -577,7 +577,7 @@
 		playsound(borg, pick('sound/items/drill_use.ogg', 'sound/items/jaws_cut.ogg', 'sound/items/jaws_pry.ogg', 'sound/items/welder.ogg', 'sound/items/ratchet.ogg'), 80, TRUE, -1)
 		sleep(1.2 SECONDS)
 	if(!prev_lockcharge)
-		borg.SetLockdown(FALSE)
+		borg.try_lockdown(FALSE)
 	borg.set_anchored(FALSE)
 	REMOVE_TRAIT(borg, TRAIT_NO_TRANSFORM, REF(src))
 	borg.hasExpanded = TRUE

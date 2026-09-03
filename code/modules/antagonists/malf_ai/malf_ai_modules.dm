@@ -1400,9 +1400,8 @@ GLOBAL_LIST_INIT(malf_modules, subtypesof(/datum/ai_module/malf))
 	var/unlock_performed = FALSE
 	cyborg.scrambledcodes = TRUE
 	if(cyborg.lockcharge)
-		cyborg.SetLockdown(FALSE)
-		if(!cyborg.lockcharge) // They could still be locked down (e.g. wire cut).
-			cyborg.ai_lockdown = FALSE
+		cyborg.try_lockdown(FALSE)
+		if(!cyborg.lockcharge) // If they are still locked down, they have a cut wire keeping them locked.
 			unlock_performed = TRUE
 
 	adjust_uses(-1)

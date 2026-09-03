@@ -62,7 +62,7 @@
 				R.lawsync()
 				R.show_laws()
 		if(WIRE_LOCKDOWN)
-			R.SetLockdown(!R.lockcharge) // Toggle
+			R.try_lockdown(!R.lockcharge) // Toggle
 			log_silicon("[key_name(usr)] [!R.lockcharge ? "locked down" : "released"] [key_name(R)] via pulse")
 
 		if(WIRE_RESET_MODEL)
@@ -100,7 +100,7 @@
 				R.logevent("Camera Module fault [mend?"cleared":"detected"]")
 				log_silicon("[key_name(usr)] [mend ? "enabled" : "disabled"] [key_name(R)]'s camera via wire")
 		if(WIRE_LOCKDOWN) // Simple lockdown.
-			R.SetLockdown(!mend)
+			R.try_lockdown(!mend)
 			R.logevent("Motor Controller fault [mend?"cleared":"detected"]")
 			log_silicon("[key_name(usr)] [!R.lockcharge ? "locked down" : "released"] [key_name(R)] via wire")
 		if(WIRE_RESET_MODEL)

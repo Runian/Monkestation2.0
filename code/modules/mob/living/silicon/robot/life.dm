@@ -64,7 +64,6 @@
 	if(low_power_mode)
 		set_low_power_mode(FALSE)
 		CRASH("Cyborg entered low power mode through unexpected means.") // Ditto above, but for lost power.
-		return
 	if(stat == CONSCIOUS)
 		if(cell.charge <= 0.01 * STANDARD_CELL_CHARGE) // An obvious warning for busy cyborgs to go charge.
 			drop_all_held_items()

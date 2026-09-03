@@ -46,7 +46,7 @@
 	if(!transformation_duration) // No need to immobilize if our transformation is instant.
 		return TRUE
 	if(should_immobilize)
-		cyborg_target.SetLockdown(TRUE)
+		cyborg_target.set_lockcharge(TRUE)
 		cyborg_target.set_anchored(TRUE)
 	INVOKE_ASYNC(src, PROC_REF(end_transformation_animation), cyborg_target, should_immobilize, transformation_duration) // This works. Timers don't work. Why? I don't know.
 	return TRUE
@@ -59,7 +59,7 @@
 		return
 	REMOVE_TRAIT(cyborg_target, TRAIT_NO_TRANSFORM, REF(src))
 	if(should_undo_immobilize)
-		cyborg_target.SetLockdown(FALSE)
+		cyborg_target.set_lockcharge(FALSE)
 		cyborg_target.set_anchored(FALSE)
 	cyborg_target.updatehealth()
 	cyborg_target.update_icons()
