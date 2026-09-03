@@ -170,12 +170,12 @@
 		return
 	if(QDELETED(target_cyborg))
 		if(target_cyborg == locked_cyborg)
-			use_power = IDLE_POWER_USE
+			update_use_power(IDLE_POWER_USE)
 			locked_cyborg = null
 		return
 	if(target_cyborg == locked_cyborg)
 		UnregisterSignal(target_cyborg, list(COMSIG_LIVING_DEATH, COMSIG_QDELETING, COMSIG_CYBORG_LOCKDOWN_CONSOLE_UNLOCK_ATTEMPT, COMSIG_CYBORG_LOCKDOWN_UNLOCK))
-		use_power = IDLE_POWER_USE
+		update_use_power(IDLE_POWER_USE)
 		locked_cyborg = null
 	if(target_cyborg.lockcharge)
 		target_cyborg.ai_lockdown = FALSE
@@ -193,7 +193,7 @@
 	if(isAI(user))
 		target_cyborg.ai_lockdown = TRUE
 	target_cyborg.try_lockdown(TRUE)
-	use_power = ACTIVE_POWER_USE
+	update_use_power(ACTIVE_POWER_USE)
 	locked_cyborg = target_cyborg
 
 	RegisterSignal(target_cyborg, COMSIG_LIVING_DEATH, PROC_REF(on_cyborg_death))
