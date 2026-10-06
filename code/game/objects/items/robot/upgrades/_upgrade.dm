@@ -72,7 +72,7 @@
 	return TRUE
 
 /**
- * Handles adding items with the module.
+ * Handles removing items with the module.
  * - borg: The cyborg losing the items.
  * - user: The [/mob] (via item usage) or [/client] (via admin borg panel) that is removing the items (downgrading).
  * - items: List of item typepaths to find and delete.
