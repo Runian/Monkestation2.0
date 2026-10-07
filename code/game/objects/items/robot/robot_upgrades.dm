@@ -1218,3 +1218,30 @@
 		/obj/item/storage/bag/xeno,
 		/obj/item/construction/plumbing/research
 	)
+
+/obj/item/borg/upgrade/transform/syndicate_compact
+	name = "borg module picker (Syndicate Compact)"
+	desc = "Allows you to to turn a jailbroken cyborg into an experimental syndicate cyborg."
+	icon_state = "module_illegal"
+	new_model = /obj/item/robot_model/syndicate/compact
+
+/obj/item/borg/upgrade/transform/syndicate_compact/action(mob/living/silicon/robot/borg, user)
+	if(borg.emagged)
+		return FALSE
+	. = ..() // Model and skin is applied here.
+	if(!.)
+		return
+	borg.UnlinkSelf()
+
+/obj/item/borg/upgrade/transform/syndicate_compact/deactivate(mob/living/silicon/robot/borg, user)
+	. = ..()
+	if(!.)
+		return
+	borg.scrambledcodes = FALSE
+	if(!QDELETED(borg.builtInCamera))
+		return
+	borg.builtInCamera = new(borg)
+	borg.builtInCamera.c_tag = borg.real_name
+	borg.builtInCamera.network = list(CAMERANET_NETWORK_SS13)
+	if(borg.wires.is_cut(WIRE_CAMERA))
+		borg.builtInCamera.toggle_cam(null, displaymessage = FALSE)

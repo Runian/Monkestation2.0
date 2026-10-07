@@ -705,6 +705,10 @@
 	chemscan(user, victim)
 	return SECONDARY_ATTACK_CANCEL_ATTACK_CHAIN
 
+/obj/item/healthanalyzer/cyborg/advanced
+	advanced = TRUE
+	give_wound_treatment_bonus = TRUE
+
 /obj/item/healthanalyzer/simple
 	name = "wound analyzer"
 	icon_state = "first_aid"
