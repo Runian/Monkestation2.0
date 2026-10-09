@@ -4,6 +4,7 @@
 	available_skins = list(
 		/datum/robot_skin/centcom/default,
 		/datum/robot_skin/centcom/kerfus,
+		/datum/robot_skin/smolraptor/centcom,
 	)
 	basic_modules = list(
 		/obj/item/assembly/flash/cyborg,

@@ -2,6 +2,10 @@
 	name = "Janitor"
 	hud_icon_state = "janitor"
 	default_skin = /datum/robot_skin/janitor/default
+	available_skins = list(
+		/datum/robot_skin/janitor/default,
+		/datum/robot_skin/smolraptor/janitor,
+	)
 	basic_modules = list(
 		/obj/item/assembly/flash/cyborg,
 		/obj/item/borg/janitorial_vacuum_suite,

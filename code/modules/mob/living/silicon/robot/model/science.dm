@@ -6,6 +6,7 @@
 		/datum/robot_skin/science/default,
 		/datum/robot_skin/science/eyebot,
 		/datum/robot_skin/science/drone,
+		/datum/robot_skin/smolraptor/science,
 	)
 	basic_modules = list(
 		/obj/item/assembly/flash/cyborg,

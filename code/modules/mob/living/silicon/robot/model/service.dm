@@ -9,6 +9,7 @@
 		/datum/robot_skin/service/tophat,
 		/datum/robot_skin/service/waitress,
 		/datum/robot_skin/service/kerfus,
+		/datum/robot_skin/smolraptor/service,
 	)
 	basic_modules = list(
 		/obj/item/assembly/flash/cyborg,

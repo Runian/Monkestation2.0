@@ -333,3 +333,5 @@ DEFINE_BITFIELD(janitor_mode_flags, list(
 #define MEDIBOT_VOICED_CHICKEN "LOOK AT ME?! i am a chicken."
 
 #define CYBORG_ICON_CARGO 'monkestation/code/modules/cargoborg/icons/robots_cargo.dmi'
+
+#define BORG_FEATURE_RIDER_OVERLAY "borg_feature_rider_overlay" // Applies 'saddle' overlay to the cyborg if someone is buckled to them.

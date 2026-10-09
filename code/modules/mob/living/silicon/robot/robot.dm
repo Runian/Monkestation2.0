@@ -1005,7 +1005,10 @@
 	var/obj/item/robot_model/temporary_robot_model = new robot_model_typepath(null) // We just want one of its list.
 	var/list/reskin_icons = list()
 	for(var/datum/robot_skin/robot_skin as anything in temporary_robot_model.available_skins)
-		reskin_icons[robot_skin] = image(icon = robot_skin::icon, icon_state = robot_skin::icon_state)
+		var/image/skin_image = image(icon = robot_skin::icon, icon_state = robot_skin::icon_state)
+		skin_image.pixel_x = robot_skin.base_pixel_x
+		skin_image.pixel_y = robot_skin.base_pixel_y
+		reskin_icons[robot_skin] = skin_image
 	var/datum/robot_skin/picked_robot_skin = show_radial_menu(src, src, reskin_icons, custom_check = CALLBACK(src, PROC_REF(check_menu), src), radius = 42, require_near = TRUE)
 	. = picked_robot_skin
 	qdel(temporary_robot_model)
@@ -1062,13 +1065,19 @@
 	icon_state = skin.icon_state
 	bubble_icon = skin.bubble_icon
 	base_pixel_x = skin.base_pixel_x
+	pixel_x = skin.base_pixel_x
 	base_pixel_y = skin.base_pixel_y
+	pixel_y = skin.base_pixel_y
 	if(isnull(skin.hat_offset) && worn_hat)
 		place_on_head(null)
 	if(isnull(skin.badge_offset) && worn_badge)
 		pin_badge(null)
 	if(skin.traits)
 		add_traits(skin.traits, CYBORG_SKIN_TRAIT)
+	var/datum/component/overlay_lighting/lighting_overlay = GetComponent(/datum/component/overlay_lighting)
+	if(lighting_overlay)
+		lighting_overlay.directional_light_offset = skin.light_offset
+		lighting_overlay.update_cone_offset()
 	if(!perform_animation || !skin.do_transformation_animation(src, lock_animation))
 		update_icons()
 

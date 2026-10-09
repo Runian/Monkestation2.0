@@ -2,6 +2,12 @@
 	name = "Peacekeeper"
 	hud_icon_state = "standard"
 	default_skin = /datum/robot_skin/peacekeeper/default
+	available_skins = list(
+		/datum/robot_skin/miner/default,
+		/datum/robot_skin/miner/asteroid,
+		/datum/robot_skin/miner/spider,
+		/datum/robot_skin/smolraptor/peacekeeper,
+	)
 	basic_modules = list(
 		/obj/item/assembly/flash/cyborg,
 		/obj/item/rsf/cookiesynth,

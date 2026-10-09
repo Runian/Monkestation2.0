@@ -6,6 +6,7 @@
 		/datum/robot_skin/miner/default,
 		/datum/robot_skin/miner/asteroid,
 		/datum/robot_skin/miner/spider,
+		/datum/robot_skin/smolraptor/miner,
 	)
 	basic_modules = list(
 		/obj/item/assembly/flash/cyborg,

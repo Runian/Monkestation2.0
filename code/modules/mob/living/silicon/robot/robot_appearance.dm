@@ -43,3 +43,5 @@
 			badge_overlay.pixel_w = offset[1]
 			badge_overlay.pixel_z = offset[2]
 		. += badge_overlay
+	if(has_buckled_mobs() && !isnull(skin.features) && (BORG_FEATURE_RIDER_OVERLAY in skin.features))
+		. += "saddle"

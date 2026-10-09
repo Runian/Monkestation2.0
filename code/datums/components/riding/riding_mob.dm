@@ -312,6 +312,18 @@
 		Unbuckle(user)
 		to_chat(user, span_warning("You can't grab onto [robot_parent] with no hands!"))
 
+/datum/component/riding/creature/cyborg/vehicle_mob_buckle(mob/living/ridden, mob/living/rider, force = FALSE)
+	var/mob/living/silicon/robot/robot_parent = parent
+	if(istype(robot_parent.skin) && !isnull(robot_parent.skin.features) && (BORG_FEATURE_RIDER_OVERLAY in robot_parent.skin.features))
+		robot_parent.update_icons() // Gives the overlay.
+	return ..()
+
+/datum/component/riding/creature/cyborg/vehicle_mob_unbuckle(mob/living/formerly_ridden, mob/living/former_rider, force = FALSE)
+	var/mob/living/silicon/robot/robot_parent = parent
+	if(istype(robot_parent.skin) && (BORG_FEATURE_RIDER_OVERLAY in robot_parent.skin.features))
+		robot_parent.update_icons() // Removes the overlay.
+	return ..()
+
 /datum/component/riding/creature/cyborg/handle_vehicle_layer(dir)
 	var/atom/movable/robot_parent = parent
 	if(dir == SOUTH)

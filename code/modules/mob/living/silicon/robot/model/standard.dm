@@ -2,6 +2,10 @@
 	name = "Standard"
 	hud_icon_state = "standard"
 	default_skin = /datum/robot_skin/standard/default
+	available_skins = list(
+		/datum/robot_skin/standard/default,
+		/datum/robot_skin/smolraptor/standard,
+	)
 	basic_modules = list(
 		/obj/item/assembly/flash/cyborg,
 		/obj/item/reagent_containers/borghypo/epi, // Buffed slightly by letting them dispense salglu. Can help humans better at the cost of a smaller welding tank so they can't just heal all the time. Feels more in line with what's expectted of borgs nowdays.

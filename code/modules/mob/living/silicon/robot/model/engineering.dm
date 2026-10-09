@@ -2,6 +2,10 @@
 	name = "Engineering"
 	hud_icon_state = "engineer"
 	default_skin = /datum/robot_skin/engineering/default
+	available_skins = list(
+		/datum/robot_skin/engineering/default,
+		/datum/robot_skin/smolraptor/engineer,
+	)
 	basic_modules = list(
 		/obj/item/assembly/flash/cyborg,
 		/obj/item/construction/rcd/borg,

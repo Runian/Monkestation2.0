@@ -32,8 +32,12 @@
 		"east" = list(-6, 3),
 		"west" = list(6, 3),
 	)
+	/// The X and Y offsets of their headlamp. If not null, allows badges to be worn.
+	var/list/light_offset = null
 	/// The traits that are given when using this skin.
 	var/list/traits = null
+	/// Additional skin-specific features to apply.
+	var/list/features = null
 
 /// Performs the transformation animation, if there is any.
 /datum/robot_skin/proc/do_transformation_animation(mob/living/silicon/robot/cyborg_target, should_immobilize = TRUE)

@@ -6,6 +6,7 @@
 		/datum/robot_skin/cargo/default,
 		/datum/robot_skin/cargo/zoomba,
 		/datum/robot_skin/cargo/kerfus,
+		/datum/robot_skin/smolraptor/cargo,
 	)
 	basic_modules = list(
 		/obj/item/stamp,

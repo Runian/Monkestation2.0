@@ -2,6 +2,10 @@
 	name = "Security"
 	hud_icon_state = "security"
 	default_skin = /datum/robot_skin/security/default
+	available_skins = list(
+		/datum/robot_skin/security/default,
+		/datum/robot_skin/smolraptor/security,
+	)
 	basic_modules = list(
 		/obj/item/assembly/flash/cyborg,
 		/obj/item/restraints/handcuffs/cable/zipties,
